@@ -1,0 +1,81 @@
+/// Uma linha por dia. Tabela de datas do modelo.
+table Calendário
+	lineageTag: 43c04263-ac2d-4de8-9219-6b40e4f9c41d
+	dataCategory: Time
+
+	column Data
+		dataType: dateTime
+		isKey
+		formatString: dd/mm/yyyy
+		lineageTag: 7e1994bf-bfa8-40e8-b9b2-3fb433e885c2
+		summarizeBy: none
+		sourceColumn: Data
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Ano
+		dataType: int64
+		formatString: 0
+		lineageTag: 871b1b3b-041d-422d-b407-a4bd58717aed
+		summarizeBy: none
+		sourceColumn: Ano
+
+	column 'Mês Nº'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 37228176-bbe4-4801-8953-9cea66d00b5b
+		summarizeBy: none
+		sourceColumn: Mês Nº
+
+	column Ano-Mês
+		dataType: string
+		lineageTag: fc6337d3-5b72-4521-aa9b-d09f2bef6091
+		summarizeBy: none
+		sourceColumn: Ano-Mês
+
+	column Mês
+		dataType: string
+		lineageTag: ca49241b-0f28-481e-9aa8-fa2f63bb3059
+		summarizeBy: none
+		sourceColumn: Mês
+		sortByColumn: 'Mês Nº'
+
+	column 'Dia da Semana Nº'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6279ae97-6dd7-41e3-b4ec-df3de00dfff6
+		summarizeBy: none
+		sourceColumn: Dia da Semana Nº
+
+	column 'Dia da Semana'
+		dataType: string
+		lineageTag: 695b089c-3760-48ac-b1c2-23254baf6253
+		summarizeBy: none
+		sourceColumn: Dia da Semana
+		sortByColumn: 'Dia da Semana Nº'
+
+	column 'Dia Útil'
+		dataType: boolean
+		lineageTag: 5fcb3ba5-b342-4d5e-9b3f-d3a24d73e434
+		summarizeBy: none
+		sourceColumn: Dia Útil
+
+	partition Calendário = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(Text.TrimEnd(PastaDados, "\") & "\dim_calendario.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+				    Colunas = Table.SelectColumns(Cabecalhos, {"data", "ano", "mes", "ano_mes", "mes_nome", "num_dia_semana", "dia_semana", "dia_util"}, MissingField.UseNull),
+				    Vazios = Table.TransformColumns(Colunas, {}, each if _ = "" then null else _),
+				    Tipos = Table.TransformColumnTypes(Vazios, {{"data", type date}, {"ano", Int64.Type}, {"mes", Int64.Type}, {"ano_mes", type text}, {"mes_nome", type text}, {"num_dia_semana", Int64.Type}, {"dia_semana", type text}, {"dia_util", type logical}}, "en-US"),
+				    Nomes = Table.RenameColumns(Tipos, {{"data", "Data"}, {"ano", "Ano"}, {"mes", "Mês Nº"}, {"ano_mes", "Ano-Mês"}, {"mes_nome", "Mês"}, {"num_dia_semana", "Dia da Semana Nº"}, {"dia_semana", "Dia da Semana"}, {"dia_util", "Dia Útil"}})
+				in
+				    Nomes
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% set g = resumo.geral %}{% set p = resumo.planos %}
+{% block titulo %}Qualidade{% endblock %}
+{% block h1 %}Gestão da qualidade{% endblock %}
+{% block sub %}Não conformidades e planos de ação 5W2H · indicadores de {{ periodo.rotulo() }}{% endblock %}
+{% block acoes %}
+  {{ m.seletor_periodo(meses, mes_atual, periodo, {'status': status, 'etapa': etapa}) }}
+  {% if pode('qualidade_editar') %}<a class="btn btn-primario" href="{{ url_for('qualidade.nova') }}"><svg class="ic"><use href="#i-plus"/></svg>Registrar NC</a>{% endif %}
+{% endblock %}
+{% block conteudo %}
+<section class="kpis">
+  {{ m.kpi('NCs no período', g.no_periodo|num, '' if periodo.todos else ' · anterior ' ~ g.periodo_anterior) }}
+  {{ m.kpi('Em aberto (hoje)', g.abertas|num) }}
+  {{ m.kpi('Prazo vencido', g.vencidas|num, destaque=g.vencidas > 0) }}
+  {{ m.kpi('Tempo médio de resolução', g.tempo_medio_resolucao_dias|num(1), ' dias', ajuda='NCs concluídas no período') }}
+  {{ m.kpi('Reincidências (90 dias)', resumo.reincidentes|length|num, ' categorias', destaque=resumo.reincidentes|length > 0) }}
+  {{ m.kpi('Planos 5W2H concluídos', p.concluidas|num, ' de ' ~ p.total, ajuda=(p.atrasadas ~ ' plano(s) atrasado(s)')) }}
+</section>
+
+<div class="grade g-2-1">
+  <section class="card">
+    <div class="card-cab"><div><h2>NCs por mês e etapa do processo</h2><p>Pré-analítica · analítica · pós-analítica · administrativa</p></div></div>
+    <div class="card-corpo"><div class="grafico"><canvas role="img" id="g-nc-mensal" aria-label="Não conformidades por mês e etapa"></canvas></div></div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Reincidências</h2><p>≥ 3 ocorrências nos últimos 90 dias</p></div></div>
+    <div class="card-corpo">
+      {% for r in resumo.reincidentes %}
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line-2)">
+          <span>{{ r.categoria }}</span><b class="num">{{ r.ocorrencias_90d }}×</b></div>
+      {% else %}<div class="vazio">Sem reincidências.</div>{% endfor %}
+      {% if resumo.reincidentes %}<p class="pequeno mudo" style="margin:10px 0 0">Recomendação: análise de causa raiz e plano 5W2H para cada categoria reincidente.</p>{% endif %}
+    </div>
+  </section>
+</div>
+
+<div class="grade g2" style="align-items:start">
+  <section class="card">
+    <div class="card-cab"><div><h2>Pareto das categorias</h2><p>{{ periodo.rotulo() }} · em azul, as categorias que somam até 80% das ocorrências</p></div></div>
+    <div class="card-corpo">{% if resumo.por_categoria %}<div class="grafico alto"><canvas role="img" id="g-pareto" aria-label="Não conformidades por categoria, ordenadas"></canvas></div>
+      {% else %}<div class="vazio">Nenhuma não conformidade registrada no período.</div>{% endif %}</div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Por etapa do processo</h2><p>{{ periodo.rotulo() }}</p></div></div>
+    <div class="tabela-wrap"><table class="tabela">
+      <thead><tr><th>Etapa</th><th class="n">NCs</th><th class="n">Em aberto</th><th class="n">Vencidas</th><th class="n">Dias até resolver</th></tr></thead>
+      <tbody>{% for e in por_etapa %}<tr><td>{{ rotulo('etapa', e.etapa) }}</td><td class="n">{{ e.qtd|num }}</td><td class="n">{{ e.abertas|num }}</td>
+        <td class="n">{% if e.vencidas %}<span class="st st-ruim">{{ e.vencidas|num }}</span>{% else %}0{% endif %}</td>
+        <td class="n">{{ e.dias_resolucao|num(1) if e.dias_resolucao is not none else '—' }}</td></tr>
+      {% else %}<tr><td colspan="5"><div class="vazio">Sem registros no período.</div></td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-cab">
+    <form method="get" class="filtros" data-auto>
+      {% if mes_atual %}<input type="hidden" name="mes" value="{{ mes_atual }}">{% endif %}
+      <div class="campo"><label for="status">Situação</label><select id="status" name="status">
+        {% for v, r in [('ABERTAS','Em aberto'),('VENCIDAS','Vencidas'),('ABERTA','Abertas'),('EM_TRATAMENTO','Em tratamento'),('CONCLUIDA','Concluídas'),('TODAS','Todas')] %}
+        <option value="{{ v }}" {{ 'selected' if status == v }}>{{ r }}</option>{% endfor %}</select></div>
+      <div class="campo"><label for="etapa">Etapa</label><select id="etapa" name="etapa"><option value="">Todas</option>
+        {% for v, r in R.ETAPA.items() %}<option value="{{ v }}" {{ 'selected' if etapa == v }}>{{ r }}</option>{% endfor %}</select></div>
+    </form>
+    <span class="mudo pequeno">{{ lista|length }} registro(s)</span>
+  </div>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>#</th><th>Data</th><th>Categoria</th><th>Etapa</th><th>Setor / UBS</th><th>Prioridade</th><th>Situação</th><th>Prazo</th><th class="n">5W2H</th></tr></thead>
+    <tbody>{% for n in lista %}
+      <tr><td class="mudo">{{ n.id }}</td><td>{{ n.data|data }}</td>
+        <td><a href="{{ url_for('qualidade.detalhe', nid=n.id) }}"><b>{{ n.categoria }}</b></a></td>
+        <td>{{ rotulo('etapa', n.etapa) }}</td><td class="mudo">{{ n.setor or '' }}{{ ' · ' if n.setor and n.ubs }}{{ n.ubs or '' }}</td>
+        <td>{{ m.badge_prioridade(n.prioridade) }}</td><td>{{ m.badge_situacao(n.status) }}</td>
+        <td>{% if n.vencida %}<span class="badge b-danger">vencido {{ n.prazo|data }}</span>{% else %}{{ n.prazo|data }}{% endif %}</td>
+        <td class="n">{{ n.planos or '—' }}</td></tr>
+    {% else %}<tr><td colspan="9"><div class="vazio">Nenhuma não conformidade com esses filtros.</div></td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+<script type="application/json" id="dados">{{ graficos }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graficos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/qualidade.js') }}"></script>
+{% endblock %}

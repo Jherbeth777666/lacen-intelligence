@@ -1,0 +1,160 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "c51e587d872714f803d8",
+  "position": {
+    "x": 16,
+    "y": 213,
+    "z": 6000,
+    "height": 495,
+    "width": 400,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Exame"
+                    }
+                  },
+                  "Property": "Setor"
+                }
+              },
+              "queryRef": "Exame.Setor",
+              "nativeQueryRef": "Setor",
+              "active": true
+            }
+          ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "% Liberado no Prazo"
+                }
+              },
+              "queryRef": "Medidas.% Liberado no Prazo",
+              "nativeQueryRef": "% Liberado no Prazo"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "TAT Médio (h)"
+                }
+              },
+              "queryRef": "Medidas.TAT Médio (h)",
+              "nativeQueryRef": "TAT Médio (h)"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "TAT Médio (h)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Tempo médio de liberação (h) por setor'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "57ad403fad4b1524eb84",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Exame"
+              }
+            },
+            "Property": "Setor"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "62871cf0c3a892ae6a4e",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Medidas"
+              }
+            },
+            "Property": "TAT Médio (h)"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "289b975b950a3a41f075",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Medidas"
+              }
+            },
+            "Property": "% Liberado no Prazo"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

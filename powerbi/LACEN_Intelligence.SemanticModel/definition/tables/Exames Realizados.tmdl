@@ -1,0 +1,102 @@
+/// Um exame por linha. TAT = liberação − (data do atendimento às 07:00).
+table 'Exames Realizados'
+	lineageTag: 3c23a7b3-ccac-4640-af2e-58a1b65c739f
+
+	column atendimento_exame_id
+		dataType: int64
+		isHidden
+		lineageTag: 15b33781-44ba-47d1-b905-1a18046c77d2
+		summarizeBy: none
+		sourceColumn: atendimento_exame_id
+
+	column atendimento_id
+		dataType: int64
+		isHidden
+		lineageTag: dd58b880-a5ce-4d1a-bcbb-60770ed7b7e1
+		summarizeBy: none
+		sourceColumn: atendimento_id
+
+	column data
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: 30a7cfe1-5616-4aca-89a3-48553da335da
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ubs_id
+		dataType: double
+		isHidden
+		lineageTag: 441c79c6-13fc-4661-8396-d919c52067bb
+		summarizeBy: none
+		sourceColumn: ubs_id
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column exame_id
+		dataType: int64
+		isHidden
+		lineageTag: a5c16cfd-6cec-4764-829a-2552fb998904
+		summarizeBy: none
+		sourceColumn: exame_id
+
+	column quantidade
+		dataType: int64
+		isHidden
+		lineageTag: eeff032f-e482-4cd1-ba06-a11b8adee93f
+		summarizeBy: none
+		sourceColumn: quantidade
+
+	column valor
+		dataType: decimal
+		isHidden
+		lineageTag: 618393a4-a1e9-4707-a95e-74d8f6ebe1e8
+		summarizeBy: none
+		sourceColumn: valor
+
+	column Situação
+		dataType: string
+		lineageTag: d1f5423b-2aa3-4b76-8fb3-cda582e988ab
+		summarizeBy: none
+		sourceColumn: Situação
+
+	column 'Liberado em'
+		dataType: dateTime
+		formatString: dd/mm/yyyy hh:nn
+		lineageTag: dfc03d2a-a4a1-48d0-a147-07964e28cd7c
+		summarizeBy: none
+		sourceColumn: Liberado em
+
+	column tat_horas
+		dataType: double
+		isHidden
+		lineageTag: 3cfe5206-cae8-4859-ba53-8663983f8849
+		summarizeBy: none
+		sourceColumn: tat_horas
+
+	column 'Dentro do Prazo'
+		dataType: boolean
+		lineageTag: 2057f72f-fe86-411f-b349-aad2b80906c6
+		summarizeBy: none
+		sourceColumn: Dentro do Prazo
+
+	partition 'Exames Realizados' = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(Text.TrimEnd(PastaDados, "\") & "\fato_exames.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+				    Colunas = Table.SelectColumns(Cabecalhos, {"atendimento_exame_id", "atendimento_id", "data", "ubs_id", "exame_id", "quantidade", "valor", "situacao", "liberado_em", "tat_horas", "dentro_prazo"}, MissingField.UseNull),
+				    Vazios = Table.TransformColumns(Colunas, {}, each if _ = "" then null else _),
+				    Tipos = Table.TransformColumnTypes(Vazios, {{"atendimento_exame_id", Int64.Type}, {"atendimento_id", Int64.Type}, {"data", type date}, {"ubs_id", Int64.Type}, {"exame_id", Int64.Type}, {"quantidade", Int64.Type}, {"valor", Currency.Type}, {"situacao", type text}, {"liberado_em", type datetime}, {"tat_horas", type number}, {"dentro_prazo", type logical}}, "en-US"),
+				    SemUBS = Table.ReplaceValue(Tipos, null, 0, Replacer.ReplaceValue, {"ubs_id"}),
+				    Nomes = Table.RenameColumns(SemUBS, {{"situacao", "Situação"}, {"liberado_em", "Liberado em"}, {"dentro_prazo", "Dentro do Prazo"}})
+				in
+				    Nomes
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

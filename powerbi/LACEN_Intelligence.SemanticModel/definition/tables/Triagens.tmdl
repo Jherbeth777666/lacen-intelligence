@@ -1,0 +1,74 @@
+/// Triagens (sem identificação do paciente).
+table Triagens
+	lineageTag: 6ebe50a2-11bd-42c2-8316-7412dd3fe8ed
+
+	column triagem_id
+		dataType: int64
+		isHidden
+		lineageTag: ebfe2ba6-cea8-4dee-ae95-77b9e24a295e
+		summarizeBy: none
+		sourceColumn: triagem_id
+
+	column data
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: 2d305850-ec61-4ed0-ad0b-8f7f7d381441
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ubs_id
+		dataType: double
+		isHidden
+		lineageTag: 99546e29-cc61-4cff-b96e-1e7267de861d
+		summarizeBy: none
+		sourceColumn: ubs_id
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Prioridade
+		dataType: string
+		lineageTag: a06351fa-64bc-442c-b8e1-9aa2af0b031f
+		summarizeBy: none
+		sourceColumn: Prioridade
+
+	column Situação
+		dataType: string
+		lineageTag: f7905f29-736f-46c4-99ce-81acb35217bf
+		summarizeBy: none
+		sourceColumn: Situação
+
+	column qtd_exames
+		dataType: int64
+		isHidden
+		lineageTag: 25fa9627-d1df-43e6-acb6-db147d6f7730
+		summarizeBy: none
+		sourceColumn: qtd_exames
+
+	column horas_em_aberto
+		dataType: double
+		isHidden
+		lineageTag: 412aa6a0-6712-4f16-b63c-fbe9320ffb49
+		summarizeBy: none
+		sourceColumn: horas_em_aberto
+
+	partition Triagens = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(Text.TrimEnd(PastaDados, "\") & "\fato_triagens.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+				    Colunas = Table.SelectColumns(Cabecalhos, {"triagem_id", "data", "ubs_id", "prioridade", "situacao", "qtd_exames", "horas_em_aberto"}, MissingField.UseNull),
+				    Vazios = Table.TransformColumns(Colunas, {}, each if _ = "" then null else _),
+				    Tipos = Table.TransformColumnTypes(Vazios, {{"triagem_id", Int64.Type}, {"data", type date}, {"ubs_id", Int64.Type}, {"prioridade", type text}, {"situacao", type text}, {"qtd_exames", Int64.Type}, {"horas_em_aberto", type number}}, "en-US"),
+				    SemUBS = Table.ReplaceValue(Tipos, null, 0, Replacer.ReplaceValue, {"ubs_id"}),
+				    Nomes = Table.RenameColumns(SemUBS, {{"prioridade", "Prioridade"}, {"situacao", "Situação"}})
+				in
+				    Nomes
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

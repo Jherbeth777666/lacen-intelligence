@@ -1,0 +1,161 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "e6182697864af104f4ed",
+  "position": {
+    "x": 548,
+    "y": 96,
+    "z": 6000,
+    "height": 292,
+    "width": 716,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "UBS"
+                    }
+                  },
+                  "Property": "UBS"
+                }
+              },
+              "queryRef": "UBS.UBS",
+              "nativeQueryRef": "UBS"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Total de Agendamentos"
+                }
+              },
+              "queryRef": "Medidas.Total de Agendamentos",
+              "nativeQueryRef": "Total de Agendamentos"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Faltas"
+                }
+              },
+              "queryRef": "Medidas.Faltas",
+              "nativeQueryRef": "Faltas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Taxa de Faltas"
+                }
+              },
+              "queryRef": "Medidas.Taxa de Faltas",
+              "nativeQueryRef": "Taxa de Faltas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Δ Taxa de Faltas (p.p.)"
+                }
+              },
+              "queryRef": "Medidas.Δ Taxa de Faltas (p.p.)",
+              "nativeQueryRef": "Δ Taxa de Faltas (p.p.)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Faltas vs Rede"
+                }
+              },
+              "queryRef": "Medidas.Faltas vs Rede",
+              "nativeQueryRef": "Faltas vs Rede"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Cálculo"
+                }
+              },
+              "queryRef": "Medidas.Total de Atendimentos",
+              "nativeQueryRef": "Total de Atendimentos"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Taxa de Faltas"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Resumo por UBS'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

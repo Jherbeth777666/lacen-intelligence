@@ -1,0 +1,114 @@
+/// Agendamentos das UBS. 'realizado' = compareceu ou faltou (base da taxa de faltas).
+table Agendamentos
+	lineageTag: 96b3adbf-d4e3-4036-b2b3-57200ce6173f
+
+	column agendamento_id
+		dataType: string
+		isHidden
+		lineageTag: ca7a0b8c-af9b-40f6-b798-6653dc531fc6
+		summarizeBy: none
+		sourceColumn: agendamento_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column data
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: cc7da80f-0aa9-4bdd-9219-bda2c598ec0d
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Horário
+		dataType: string
+		lineageTag: 9a9769bf-4785-4ef2-ab22-90a80b78f8b7
+		summarizeBy: none
+		sourceColumn: Horário
+
+		annotation SummarizationSetBy = Automatic
+
+	column ubs_id
+		dataType: string
+		isHidden
+		lineageTag: 85d66820-6487-4083-8c57-f75a13a72129
+		summarizeBy: none
+		sourceColumn: ubs_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column paciente_pseudo
+		dataType: string
+		isHidden
+		lineageTag: 49d21514-9b68-4e48-a244-0cf5a3d6facf
+		summarizeBy: none
+		sourceColumn: paciente_pseudo
+
+	column Tipo
+		dataType: string
+		lineageTag: b822ab47-8954-49e1-aa45-54ca7d9d8965
+		summarizeBy: none
+		sourceColumn: Tipo
+
+	column Status
+		dataType: string
+		lineageTag: 314aa15c-e313-4d59-b575-796ef92e5ae7
+		summarizeBy: none
+		sourceColumn: Status
+
+	column compareceu
+		dataType: string
+		isHidden
+		lineageTag: 2ec6bcca-3ff3-48b1-a537-6728beee4039
+		summarizeBy: none
+		sourceColumn: compareceu
+
+		annotation SummarizationSetBy = Automatic
+
+	column faltou
+		dataType: string
+		isHidden
+		lineageTag: 40d8959b-f2fa-4984-a9ae-9c5ac41dd69c
+		summarizeBy: none
+		sourceColumn: faltou
+
+		annotation SummarizationSetBy = Automatic
+
+	column realizado
+		dataType: string
+		isHidden
+		lineageTag: c34509f7-f4ef-466c-aa99-02fbd53d3d86
+		summarizeBy: none
+		sourceColumn: realizado
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Atendido no Lab'
+		dataType: string
+		lineageTag: 0ffdc884-11ce-4c17-94ef-5811a8d8f7a7
+		summarizeBy: none
+		sourceColumn: Atendido no Lab
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Agendamentos = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(Text.TrimEnd(PastaDados, "\") & "\fato_agendamentos.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+				    Colunas = Table.SelectColumns(Cabecalhos, {"agendamento_id", "data", "horario", "ubs_id", "paciente_pseudo", "tipo", "status", "compareceu", "faltou", "realizado", "atendido_no_lab"}, MissingField.UseNull),
+				    Vazios = Table.TransformColumns(Colunas, {}, each if _ = "" then null else _),
+				    SemUBS = Table.ReplaceValue(Vazios, null, 0, Replacer.ReplaceValue, {"ubs_id"}),
+				    Nomes = Table.RenameColumns(SemUBS, {{"horario", "Horário"}, {"tipo", "Tipo"}, {"status", "Status"}, {"atendido_no_lab", "Atendido no Lab"}}),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(Nomes,{{"data", type date}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

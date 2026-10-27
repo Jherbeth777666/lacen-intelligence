@@ -1,0 +1,121 @@
+{# ---------- KPI com variação (bom_quando: 'sobe' | 'desce' | None) ---------- #}
+{% macro kpi(rotulo_kpi, valor, sufixo='', var=None, bom_quando='sobe', ajuda=None, destaque=False, serie=None) -%}
+<div class="kpi {{ 'destaque-ruim' if destaque }}"{% if ajuda %} title="{{ ajuda }}"{% endif %}>
+  <div class="kpi-rotulo">{{ rotulo_kpi }}</div>
+  <div class="kpi-valor">{{ valor }}{% if sufixo %}<small>{{ sufixo }}</small>{% endif %}</div>
+  {% if var %}
+    {% set v = var.valor %}
+    {% set classe = 'var-neutra' if v == 0 or not bom_quando else (('var-bom' if v > 0 else 'var-ruim') if bom_quando == 'sobe' else ('var-ruim' if v > 0 else 'var-bom')) %}
+    <div class="kpi-var"><b class="{{ classe }}">{{ '▲' if v > 0 else ('▼' if v < 0 else '■') }} {{ (v|abs)|num(1) }}{{ ' p.p.' if var.tipo == 'pp' else '%' }}</b> vs. anterior</div>
+  {% else %}
+    <div class="kpi-var">&nbsp;</div>
+  {% endif %}
+  {% if serie %}{{ spark(serie, '#7d909f', 160, 26) }}{% endif %}
+</div>
+{%- endmacro %}
+
+{# ---------- metas: valor, trilho com a marca da meta, situação escrita ---------- #}
+{% macro lista_metas(metas) -%}
+<div class="metas">
+  {% for mt in metas %}
+  {% set cor = {'ok':'#0ca30c','warn':'#fab219','ruim':'#d03b3b','sem':'#4b5f70'}[mt.status] %}
+  <div class="meta">
+    <div class="meta-nome">{{ mt.nome }}<small>{{ 'até' if mt.sentido == 'max' else 'no mínimo' }} {{ mt.meta|num(0 if not mt.unidade else 1) }}{{ mt.unidade }} · {{ mt.detalhe }}</small></div>
+    <div class="meta-trilho" aria-hidden="true"><span class="preench" style="width:{{ mt.preench|round(1) }}%;background:{{ cor }}"></span>
+      <span class="alvo" style="left:calc({{ mt.alvo|round(1) }}% - 1px)"></span></div>
+    <div class="meta-valor">{% if mt.valor is none %}<span class="st st-sem">sem dados</span>{% else %}{{ mt.valor|num(0 if not mt.unidade else 1) }}{{ mt.unidade }}
+      <div><span class="st st-{{ mt.status }}">{{ {'ok':'na meta','warn':'perto da meta','ruim':'fora da meta'}[mt.status] }}</span></div>{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{# ---------- destaques do período ---------- #}
+{% macro lista_destaques(itens) -%}
+<ul class="destaques">
+  {% for d in itens %}
+  <li><span class="seta {{ {'bom':'var-bom','ruim':'var-ruim','neutro':'var-neutra'}[d.tom] }}" aria-hidden="true">{{ {'sobe':'▲','desce':'▼','fato':'●'}[d.seta] }}</span>
+    <span><b>{{ d.sujeito }}</b> {{ d.texto }}</span></li>
+  {% else %}
+  <li><span></span><span class="mudo">Sem variações relevantes para destacar neste período.</span></li>
+  {% endfor %}
+</ul>
+{%- endmacro %}
+
+{# ---------- seletor de período ---------- #}
+{% macro seletor_periodo(meses, mes_atual, periodo, extra=None) -%}
+<form method="get" class="seletor-periodo" data-auto>
+  {% if extra %}{% for k, v in extra.items() %}{% if v %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}{% endif %}
+  <label class="sr" for="mes">Período</label>
+  <select name="mes" id="mes">
+    {% if not mes_atual or (mes_atual != 'todos' and mes_atual not in meses) %}<option value="{{ mes_atual or '' }}" selected>{{ periodo.rotulo() }}</option>{% endif %}
+    <option value="todos" {{ 'selected' if mes_atual == 'todos' }}>Todos os meses</option>
+    {% for m in meses %}
+      <option value="{{ m }}" {{ 'selected' if m == mes_atual }}>{{ ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][m[5:]|int - 1] }}/{{ m[:4] }}</option>
+    {% endfor %}
+  </select>
+</form>
+{%- endmacro %}
+
+{# ---------- lista de alertas ---------- #}
+{% macro lista_alertas(alertas, vazio='Nenhum indicador ultrapassou os limiares de alerta no período.', rolavel=False, perguntar=False) -%}
+<div class="alertas {{ 'rolavel' if rolavel }}">
+  {% for a in alertas %}
+  <div class="alerta {{ a.severidade }}">
+    <div class="sev"></div>
+    <div>
+      <div class="alerta-cat"><span class="sev-rot">{{ {'alta':'Crítico','media':'Atenção','baixa':'Informativo'}[a.severidade] }}</span> em {{ a.categoria|lower }}</div>
+      <div class="alerta-titulo">{{ a.titulo }}</div>
+      <div class="alerta-ev">{{ a.evidencias[0] }}</div>
+      <details>
+        <summary>Evidências e recomendação</summary>
+        <ul>{% for e in a.evidencias %}<li>{{ e }}</li>{% endfor %}</ul>
+        <div style="margin-top:6px"><b>Investigar / agir:</b></div>
+        <ul>{% for r in a.recomendacoes %}<li>{{ r }}</li>{% endfor %}</ul>
+        <div class="mudo" style="margin-top:4px">Indicador para acompanhar: {{ a.indicador }}</div>
+      </details>
+      {% if perguntar %}<button class="perguntar-alerta" type="button"
+        data-pergunta="Explique o alerta “{{ a.titulo }}”: quais as evidências nos dados, as possíveis causas e o que a gestão deveria fazer?">
+        <svg class="ic"><use href="#i-spark"/></svg>Perguntar à IA</button>{% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="vazio">{{ vazio }}</div>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{# ---------- base analisada ---------- #}
+{% macro base_analisada(base) -%}
+<div class="base">
+  <span>Base analisada: <b>{{ base.periodo }}</b></span>
+  <span>UBS: <b>{{ base.ubs_analisadas }}</b></span>
+  <span>Registros: <b>{{ base.registros|num }}</b></span>
+  <span class="mudo">agendamentos {{ base.detalhe.agendamentos|num }} · atendimentos {{ base.detalhe.atendimentos|num }} · exames {{ base.detalhe.exames|num }} · NCs {{ base.detalhe.nao_conformidades|num }}</span>
+</div>
+{%- endmacro %}
+
+{% macro badge_situacao(s) -%}
+{% set cls = {'AGUARDANDO':'b-warn','CONFIRMADA':'b-info','COLETADA':'b-ok','CANCELADA':'b-neutro',
+              'ABERTA':'b-warn','EM_TRATAMENTO':'b-info','CONCLUIDA':'b-ok','PLANEJADA':'b-neutro','EM_ANDAMENTO':'b-info','ATRASADA':'b-danger',
+              'CONCLUIDA_COM_ALERTAS':'b-warn','FALHOU':'b-danger','PROCESSANDO':'b-neutro'} %}
+<span class="badge {{ cls.get(s, 'b-neutro') }}">{{ R.SITUACAO_TRIAGEM.get(s) or R.STATUS_NC.get(s) or R.STATUS_PLANO.get(s) or R.STATUS_IMPORTACAO.get(s) or s }}</span>
+{%- endmacro %}
+
+{% macro badge_prioridade(p) -%}
+{% set cls = {'URGENTE':'b-danger','CRITICA':'b-danger','PRIORITARIA':'b-warn','ALTA':'b-warn','MEDIA':'b-info','ROTINA':'b-neutro','BAIXA':'b-neutro'} %}
+<span class="badge {{ cls.get(p, 'b-neutro') }}">{{ R.PRIORIDADE_TRIAGEM.get(p) or R.PRIORIDADE_NC.get(p) or p }}</span>
+{%- endmacro %}
+
+{% macro csrf() -%}<input type="hidden" name="_csrf" value="{{ csrf_token() }}">{%- endmacro %}
+
+{# ---------- tubo de coleta: tampa na cor do módulo (identidade visual) ---------- #}
+{% macro tubo(cor, classe='tubo', nivel=0.45) -%}
+<svg class="{{ classe }}" viewBox="0 0 18 48" aria-hidden="true" style="--cor:{{ cor }}">
+  <rect x="1" y="1" width="16" height="10" rx="2.6" fill="{{ cor }}"/>
+  <rect x="1" y="7.5" width="16" height="3.5" fill="#000" opacity=".22"/>
+  <path d="M3.5 11 V40 a5.5 5.5 0 0 0 11 0 V11" fill="{{ cor }}" fill-opacity=".08" stroke="#5d7385" stroke-width="1.1"/>
+  <path d="M3.5 {{ 11 + (29 * (1 - nivel))|round(1) }} H14.5 V40 a5.5 5.5 0 0 1 -11 0 Z" fill="{{ cor }}" opacity=".5"/>
+  <rect x="5.5" y="15" width="7" height="9" rx="1" fill="#e8eef2" opacity=".18"/>
+</svg>
+{%- endmacro %}

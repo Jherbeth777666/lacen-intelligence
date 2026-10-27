@@ -1,0 +1,123 @@
+/// Não conformidades registradas no módulo de qualidade.
+table 'Não Conformidades'
+	lineageTag: 9c82c138-606e-4758-818b-219ff5144cea
+
+	column nc_id
+		dataType: int64
+		isHidden
+		lineageTag: 6aae7f40-57fd-4104-a29e-5eb813f0c958
+		summarizeBy: none
+		sourceColumn: nc_id
+
+	column data
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: 84ded264-db78-41b9-afca-c1706ff94eb6
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Etapa
+		dataType: string
+		lineageTag: f55c50aa-e86d-444d-a298-e89b572ff047
+		summarizeBy: none
+		sourceColumn: Etapa
+
+	column Categoria
+		dataType: string
+		lineageTag: 178c38ca-3c0e-4936-b8fc-e18561883036
+		summarizeBy: none
+		sourceColumn: Categoria
+
+	column Prioridade
+		dataType: string
+		lineageTag: 72fb35aa-7131-4551-94ce-4dac50c456f9
+		summarizeBy: none
+		sourceColumn: Prioridade
+
+	column Status
+		dataType: string
+		lineageTag: 60b6ab99-fd23-420c-9fb5-febb0983af5c
+		summarizeBy: none
+		sourceColumn: Status
+
+	column Setor
+		dataType: string
+		lineageTag: fba8656f-2317-46ca-a847-ad09889ad63b
+		summarizeBy: none
+		sourceColumn: Setor
+
+	column ubs_id
+		dataType: double
+		isHidden
+		lineageTag: b22dbdc0-03f6-4ac9-b1ff-be8e0322fb01
+		summarizeBy: none
+		sourceColumn: ubs_id
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Prazo
+		dataType: dateTime
+		formatString: dd/mm/yyyy
+		lineageTag: 64c161c5-5bb7-4fbb-8994-8450d02cedfa
+		summarizeBy: none
+		sourceColumn: Prazo
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Concluída em'
+		dataType: dateTime
+		formatString: dd/mm/yyyy
+		lineageTag: 9a37c53d-1dfd-4f7d-971a-34243d909837
+		summarizeBy: none
+		sourceColumn: Concluída em
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column dias_resolucao
+		dataType: int64
+		isHidden
+		lineageTag: cac20725-3b39-41cb-b459-2d28894bb3e6
+		summarizeBy: none
+		sourceColumn: dias_resolucao
+
+	column Vencida
+		dataType: boolean
+		lineageTag: 4a04cb27-061b-4ab3-98fc-39db23d8f4f1
+		summarizeBy: none
+		sourceColumn: Vencida
+
+	column qtd_acoes
+		dataType: int64
+		isHidden
+		lineageTag: 0f7c69d9-8aa3-43a4-9bee-1aa36f690a7c
+		summarizeBy: none
+		sourceColumn: qtd_acoes
+
+	column acoes_concluidas
+		dataType: int64
+		isHidden
+		lineageTag: 282905af-9acd-4290-8edb-cf7fe07a313e
+		summarizeBy: none
+		sourceColumn: acoes_concluidas
+
+	partition 'Não Conformidades' = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(Text.TrimEnd(PastaDados, "\") & "\fato_nao_conformidades.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+				    Colunas = Table.SelectColumns(Cabecalhos, {"nc_id", "data", "etapa", "categoria", "prioridade", "status", "setor", "ubs_id", "prazo", "concluida_em", "dias_resolucao", "vencida", "qtd_acoes", "acoes_concluidas"}, MissingField.UseNull),
+				    Vazios = Table.TransformColumns(Colunas, {}, each if _ = "" then null else _),
+				    Tipos = Table.TransformColumnTypes(Vazios, {{"nc_id", Int64.Type}, {"data", type date}, {"etapa", type text}, {"categoria", type text}, {"prioridade", type text}, {"status", type text}, {"setor", type text}, {"ubs_id", Int64.Type}, {"prazo", type date}, {"concluida_em", type date}, {"dias_resolucao", Int64.Type}, {"vencida", type logical}, {"qtd_acoes", Int64.Type}, {"acoes_concluidas", Int64.Type}}, "en-US"),
+				    SemUBS = Table.ReplaceValue(Tipos, null, 0, Replacer.ReplaceValue, {"ubs_id"}),
+				    Nomes = Table.RenameColumns(SemUBS, {{"etapa", "Etapa"}, {"categoria", "Categoria"}, {"prioridade", "Prioridade"}, {"status", "Status"}, {"setor", "Setor"}, {"prazo", "Prazo"}, {"concluida_em", "Concluída em"}, {"vencida", "Vencida"}})
+				in
+				    Nomes
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

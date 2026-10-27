@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}NC #{{ nc.id }}{% endblock %}
+{% block h1 %}NC #{{ nc.id }} · {{ nc.categoria }}{% endblock %}
+{% block sub %}{{ rotulo('etapa', nc.etapa) }} · registrada em {{ nc.data|data }}{% if nc.criador %} por {{ nc.criador }}{% endif %}{% endblock %}
+{% block acoes %}
+  {% if pode('qualidade_editar') %}<a class="btn" href="{{ url_for('qualidade.detalhe', nid=nc.id, editar=1) }}">Editar</a>{% endif %}
+  <a class="btn" href="{{ url_for('qualidade.index') }}">Voltar</a>
+{% endblock %}
+{% block conteudo %}
+<section class="card">
+  <div class="card-cab"><div><h2>{{ nc.problema }}</h2></div>
+    <div>{{ m.badge_prioridade(nc.prioridade) }} {{ m.badge_situacao(nc.status) }}
+      {% if nc.status in ('ABERTA','EM_TRATAMENTO') and nc.prazo and nc.prazo < hoje %}<span class="badge b-danger">prazo vencido</span>{% endif %}</div></div>
+  <div class="card-corpo">
+    <dl class="ficha">
+      <div><dt>Setor</dt><dd>{{ nc.setor or '—' }}</dd></div>
+      <div><dt>UBS</dt><dd>{{ nc.ubs or '—' }}</dd></div>
+      <div><dt>Responsável</dt><dd>{{ nc.responsavel or '—' }}</dd></div>
+      <div><dt>Prazo</dt><dd>{{ nc.prazo|data }}</dd></div>
+      <div><dt>Concluída em</dt><dd>{{ nc.concluida_em|data }}</dd></div>
+      <div><dt>Dias em aberto</dt><dd>{{ ((nc.concluida_em or hoje) - nc.data).days }}</dd></div>
+      <div style="grid-column:1/-1"><dt>Causa</dt><dd>{{ nc.causa or '—' }}</dd></div>
+      <div style="grid-column:1/-1"><dt>Ação corretiva</dt><dd>{{ nc.acao_corretiva or '—' }}</dd></div>
+      {% if nc.observacao %}<div style="grid-column:1/-1"><dt>Observação</dt><dd>{{ nc.observacao }}</dd></div>{% endif %}
+    </dl>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-cab"><div><h2>Plano de ação 5W2H</h2><p>O quê · Por quê · Onde · Quando · Quem · Como · Quanto custa</p></div></div>
+  <div class="card-corpo" style="display:flex;flex-direction:column;gap:12px">
+    {% for p in planos %}
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b>Ação {{ loop.index }}</b>
+          <div style="display:flex;gap:8px;align-items:center">{{ m.badge_situacao(p.status) }}
+            {% if pode('qualidade_editar') %}
+            <form method="post" action="{{ url_for('qualidade.status_plano', pid=p.id) }}" data-auto>{{ m.csrf() }}
+              <select name="status" aria-label="Alterar situação" style="width:auto;padding:3px 8px;font-size:12px">
+                {% for v, r in R.STATUS_PLANO.items() %}<option value="{{ v }}" {{ 'selected' if p.status == v }}>{{ r }}</option>{% endfor %}</select></form>
+            {% endif %}</div></div>
+        <div class="w2h">
+          <div><span>O quê</span>{{ p.o_que }}</div><div><span>Por quê</span>{{ p.por_que }}</div>
+          <div><span>Onde</span>{{ p.onde or '—' }}</div><div><span>Quando</span>{{ p.quando|data }}</div>
+          <div><span>Quem</span>{{ p.quem or '—' }}</div><div><span>Como</span>{{ p.como or '—' }}</div>
+          <div><span>Quanto</span>{{ p.quanto or '—' }}</div>
+        </div>
+      </div>
+    {% else %}<div class="mudo">Nenhuma ação planejada ainda.</div>{% endfor %}
+  </div>
+  {% if pode('qualidade_editar') %}
+  <form method="post" action="{{ url_for('qualidade.novo_plano', nid=nc.id) }}" style="border-top:1px solid var(--line-2)">
+    {{ m.csrf() }}
+    <div class="card-corpo form-grade">
+      <div class="secao-form">Nova ação</div>
+      <div class="campo"><label for="o_que">O quê (What) *</label><input type="text" id="o_que" name="o_que"></div>
+      <div class="campo"><label for="por_que">Por quê (Why) *</label><input type="text" id="por_que" name="por_que"></div>
+      <div class="campo"><label for="onde">Onde (Where)</label><input type="text" id="onde" name="onde"></div>
+      <div class="campo"><label for="quando">Quando (When)</label><input type="date" id="quando" name="quando"></div>
+      <div class="campo"><label for="quem">Quem (Who)</label><input type="text" id="quem" name="quem"></div>
+      <div class="campo"><label for="quanto">Quanto custa (How much)</label><input type="text" id="quanto" name="quanto"></div>
+      <div class="campo inteiro"><label for="como">Como (How)</label><textarea id="como" name="como"></textarea></div>
+    </div>
+    <div class="card-cab" style="border-top:1px solid var(--line-2);border-bottom:0;justify-content:flex-end">
+      <button class="btn btn-primario" type="submit">Adicionar ação</button></div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

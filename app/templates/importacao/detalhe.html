@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Importação #{{ imp.id }}{% endblock %}
+{% block h1 %}Relatório da importação #{{ imp.id }}{% endblock %}
+{% block sub %}{{ imp.arquivo }} · {{ imp.iniciado_em|data }}{% if imp.usuario %} · {{ imp.usuario }}{% endif %}{% endblock %}
+{% block acoes %}<a class="btn" href="{{ url_for('importacao.index') }}">Voltar</a>{% endblock %}
+{% block conteudo %}
+<section class="kpis">
+  {{ m.kpi('Linhas lidas', imp.linhas_lidas|num) }}
+  {{ m.kpi('Registros novos', imp.inseridas|num) }}
+  {{ m.kpi('Duplicados', imp.duplicadas|num) }}
+  {{ m.kpi('Rejeitados', imp.rejeitadas|num, destaque=imp.rejeitadas > 0) }}
+  {{ m.kpi('Período', (imp.periodo_inicio|data) ~ ' – ' ~ (imp.periodo_fim|data)) }}
+</section>
+<section class="card">
+  <div class="card-cab"><div><h2>Resumo dos problemas</h2><p>Rejeitada = linha não entrou no banco · Aviso = entrou com correção automática · Info = como o arquivo foi lido</p></div>{{ m.badge_situacao(imp.status) }}</div>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Problema</th><th>Campo</th><th>Tipo</th><th class="n">Ocorrências</th></tr></thead>
+    <tbody>{% for r in resumo %}<tr><td>{{ r.problema }}</td><td><code>{{ r.campo }}</code></td>
+      {% set info = r.campo in ('colunas', 'lote') or r.problema.startswith('Identificação do paciente:') or 'cancelados' in r.problema %}
+      <td><span class="badge {{ 'b-danger' if r.severidade == 'REJEITADA' else ('b-info' if info else 'b-warn') }}">{{ 'Rejeitada' if r.severidade == 'REJEITADA' else ('Info' if info else 'Aviso') }}</span></td>
+      <td class="n">{{ r.qtd|num }}</td></tr>
+    {% else %}<tr><td colspan="4"><div class="vazio">Arquivo sem inconsistências.</div></td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% if erros %}
+<section class="card">
+  <div class="card-cab"><div><h2>Linhas com problema</h2><p>Dados pessoais aparecem mascarados · até 300 linhas</p></div></div>
+  <div class="tabela-wrap" style="max-height:480px;overflow-y:auto"><table class="tabela">
+    <thead><tr><th class="n">Linha</th><th>Campo</th><th>Valor</th><th>Problema</th></tr></thead>
+    <tbody>{% for e in erros %}<tr><td class="n">{{ e.linha or '—' }}</td><td><code>{{ e.campo }}</code></td><td class="mudo">{{ e.valor or '' }}</td><td>{{ e.problema }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endif %}
+{% endblock %}

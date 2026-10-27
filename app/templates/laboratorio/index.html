@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% set a = k.atual %}{% set v = k.variacao %}
+{% block titulo %}Laboratório{% endblock %}
+{% block h1 %}Produção laboratorial{% endblock %}
+{% block sub %}{{ periodo.rotulo() }} · dados do Worklab (pseudonimizados){% endblock %}
+{% block acoes %}{{ m.seletor_periodo(meses, mes_atual, periodo) }}{% endblock %}
+{% block conteudo %}
+<section class="kpis">
+  {{ m.kpi('Atendimentos', a.atendimentos|num, var=v.atendimentos) }}
+  {{ m.kpi('Pacientes', a.pacientes|num, var=v.pacientes) }}
+  {{ m.kpi('Exames', a.exames|num, var=v.exames) }}
+  {{ m.kpi('Exames por atendimento', a.media_exames_atendimento|num(2), var=v.media_exames_atendimento, bom_quando=None) }}
+  {{ m.kpi('Atendimentos por dia', a.media_atendimentos_dia|num(1), var=v.media_atendimentos_dia) }}
+  {{ m.kpi('Pico diário de exames', pico.exames|num if pico else '—', (' · ' ~ pico.data.strftime('%d/%m')) if pico else '', ajuda='Dia útil com mais exames no período') }}
+</section>
+
+<section class="card">
+  <div class="card-cab"><div><h2>{{ 'Produção e prazo por setor' if tem_tat else 'Produção por setor' }}</h2>
+    <p>{% if tem_tat %}TAT = liberação − coleta (07:00 do dia do atendimento) · meta definida por exame{% else %}Exames realizados por setor do laboratório{% endif %}</p></div></div>
+  <div class="tabela-wrap"><table class="tabela" data-ordenavel>
+    <thead><tr><th>Setor</th><th class="n">Exames</th><th>Participação</th>
+      {% if tem_tat %}<th class="n">TAT médio</th><th class="n">TAT p90</th><th>% liberado no prazo</th>{% endif %}
+      {% if tem_situacao %}<th class="n">Recoletas</th><th class="n">Em análise</th>{% endif %}</tr></thead>
+    <tbody>{% for s in setores %}
+      {% set part = 100 * s.exames / total_exames %}
+      <tr><td><b>{{ s.setor }}</b></td><td class="n">{{ s.exames|num }}</td>
+        <td style="min-width:180px"><span class="barra-inline" style="width:{{ (part * 1.6)|round|int }}px;background:#3987e5"></span>{{ part|num(1) }}%</td>
+        {% if tem_tat %}
+        <td class="n">{{ s.tat_medio_h|num }} h</td><td class="n">{{ s.tat_p90_h|num }} h</td>
+        <td style="min-width:160px">{% if s.pct_no_prazo is not none %}{% set stp = 'ruim' if s.pct_no_prazo < 60 else ('warn' if s.pct_no_prazo < 90 else 'ok') %}<span class="barra-inline" style="width:{{ s.pct_no_prazo|round|int }}px;background:{{ {'ruim':'#d03b3b','warn':'#fab219','ok':'#0ca30c'}[stp] }}"></span>{{ s.pct_no_prazo|pct }} <span class="st st-{{ stp }}">{{ {'ruim':'crítico','warn':'abaixo da meta','ok':'na meta'}[stp] }}</span>{% else %}<span class="mudo">sem meta</span>{% endif %}</td>
+        {% endif %}
+        {% if tem_situacao %}<td class="n">{{ s.recoletas|num }}</td><td class="n">{{ s.em_analise|num }}</td>{% endif %}</tr>
+    {% else %}<tr><td colspan="8"><div class="vazio">Sem produção importada no período.</div></td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+<div class="grade {{ 'g2' if tem_tat else '' }}">
+  {% if tem_tat %}
+  <section class="card">
+    <div class="card-cab"><div><h2>Tempo médio de liberação por setor</h2><p>Horas, por mês</p></div></div>
+    <div class="card-corpo"><div class="grafico"><canvas role="img" id="g-tat" aria-label="Tempo médio de liberação por setor e mês"></canvas></div></div>
+  </section>
+  {% endif %}
+  <section class="card">
+    <div class="card-cab"><div><h2>Volume diário de exames</h2><p>{{ periodo.rotulo() }}</p></div></div>
+    <div class="card-corpo"><div class="grafico"><canvas role="img" id="g-diario" aria-label="Volume diário"></canvas></div></div>
+  </section>
+</div>
+
+<div class="grade g2">
+  <section class="card">
+    <div class="card-cab"><div><h2>Exames que mais subiram e caíram</h2>
+      <p>{% if periodo.todos %}Comparação indisponível em “Todos os meses”{% else %}Variação vs. {{ periodo_anterior.rotulo() }} · só exames com 30+ no período anterior{% endif %}</p></div></div>
+    <div class="card-corpo">{% if periodo.todos %}<div class="vazio">Escolha um mês para comparar com o anterior.</div>
+      {% else %}<div class="grafico alto"><canvas role="img" id="g-variacao" aria-label="Variação percentual por exame"></canvas></div>{% endif %}</div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Exames por atendimento</h2><p>Quantos exames cada atendimento pediu · {{ periodo.rotulo() }}</p></div></div>
+    <div class="card-corpo"><div class="grafico alto"><canvas role="img" id="g-perfil" aria-label="Distribuição de exames por atendimento"></canvas></div></div>
+  </section>
+</div>
+
+<div class="grade g2">
+  <section class="card">
+    <div class="card-cab"><div><h2>Exames realizados</h2><p>Todos os {{ top|length }} exames do período{% if not periodo.todos %} · variação vs. {{ periodo_anterior.rotulo() }}{% endif %} · clique no título para ordenar</p></div></div>
+    <div class="tabela-wrap" style="max-height:470px;overflow-y:auto"><table class="tabela" data-ordenavel>
+      <thead><tr><th>Exame</th><th>Setor</th><th class="n">Qtd</th><th class="n">Part.</th><th class="n">Variação</th></tr></thead>
+      <tbody>{% for t in top %}<tr><td data-v="{{ t.exame }}"><span class="sigla">{{ t.sigla }}</span> {{ t.exame }}</td><td class="mudo">{{ t.setor }}</td>
+        <td class="n">{{ t.quantidade|num }}</td><td class="n">{{ t.participacao|pct }}</td>
+        <td class="n">{% if t.variacao_pct is not none %}<span class="mudo">{{ '▲' if t.variacao_pct > 0 else ('▼' if t.variacao_pct < 0 else '■') }}</span> {{ ('+' if t.variacao_pct > 0 else '') ~ t.variacao_pct|num(1) }}%{% else %}—{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Exames por UBS de origem</h2><p>UBS informada no Worklab ou inferida pelo agendamento</p></div></div>
+    <div class="tabela-wrap" style="max-height:470px;overflow-y:auto"><table class="tabela" data-ordenavel>
+      <thead><tr><th>UBS</th><th class="n">Atendimentos</th><th class="n">Exames</th><th class="n">Por atend.</th></tr></thead>
+      <tbody>{% for u in por_ubs %}<tr><td style="white-space:nowrap">{{ u.ubs|ubs }}</td><td class="n">{{ u.atendimentos|num }}</td>
+        <td class="n"><span class="barra-inline" style="width:{{ (44 * u.exames / max_ubs)|round|int }}px"></span>{{ u.exames|num }}</td>
+        <td class="n">{{ u.exames_por_atendimento|num(2) }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+<script type="application/json" id="dados">{{ graficos }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graficos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/laboratorio.js') }}"></script>
+{% endblock %}

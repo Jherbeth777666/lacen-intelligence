@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titulo %}Erro {{ codigo }}{% endblock %}
+{% block h1 %}Erro {{ codigo }}{% endblock %}
+{% block corpo %}
+{% if usuario_nome %}{{ super() }}{% else %}
+<div class="login-form" style="min-height:100vh"><div class="card card-corpo" style="max-width:420px">
+  <h1>Erro {{ codigo }}</h1><p>{{ mensagem }}</p><a class="btn btn-primario" href="{{ url_for('auth.login') }}">Ir para o login</a>
+</div></div>
+{% endif %}
+{% endblock %}
+{% block conteudo %}
+<div class="card card-corpo"><p>{{ mensagem }}</p><a class="btn" href="{{ url_for('painel.index') }}">Voltar ao dashboard</a></div>
+{% endblock %}

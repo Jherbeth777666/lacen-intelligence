@@ -1,0 +1,49 @@
+/// Unidades de saúde (UBS e outros pontos de coleta).
+table UBS
+	lineageTag: 38905c63-435b-423f-8df7-4ddba8a081cb
+
+	column ubs_id
+		dataType: int64
+		isHidden
+		isKey
+		lineageTag: 11f3da5e-1cd7-443c-8de7-8816ced9b700
+		summarizeBy: none
+		sourceColumn: ubs_id
+
+	column UBS
+		dataType: string
+		lineageTag: f457556c-0763-451f-bd89-aa932698eb12
+		summarizeBy: none
+		sourceColumn: UBS
+
+	column 'Tipo de Unidade'
+		dataType: string
+		lineageTag: dce1caf8-c4ae-4416-a50d-c002d198a4a3
+		summarizeBy: none
+		sourceColumn: Tipo de Unidade
+
+	column Ativa
+		dataType: boolean
+		lineageTag: a6537ebe-1cc9-4835-86e3-a31a73385069
+		summarizeBy: none
+		sourceColumn: Ativa
+
+	partition UBS = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(Text.TrimEnd(PastaDados, "\") & "\dim_ubs.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+				    Colunas = Table.SelectColumns(Cabecalhos, {"ubs_id", "ubs", "tipo", "ativo"}, MissingField.UseNull),
+				    Vazios = Table.TransformColumns(Colunas, {}, each if _ = "" then null else _),
+				    Tipos = Table.TransformColumnTypes(Vazios, {{"ubs_id", Int64.Type}, {"ubs", type text}, {"tipo", type text}, {"ativo", type logical}}, "en-US"),
+				    SemUBS = Table.Combine({Tipos, #table(type table [ubs_id = Int64.Type, ubs = text, tipo = text, ativo = logical],
+				        {{0, "Não identificada", "Sem UBS", true}})}),
+				    Nomes = Table.RenameColumns(SemUBS, {{"ubs", "UBS"}, {"tipo", "Tipo de Unidade"}, {"ativo", "Ativa"}})
+				in
+				    Nomes
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

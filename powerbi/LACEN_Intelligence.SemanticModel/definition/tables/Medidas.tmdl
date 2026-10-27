@@ -1,0 +1,259 @@
+/// Indicadores do LACEN Intelligence (mesmas definições do site).
+table Medidas
+	lineageTag: 739f0c30-766c-4381-8cd0-44e82cdcd9c0
+
+	/// Total de agendamentos (inclui pendentes).
+	measure 'Total de Agendamentos' = COUNTROWS ( Agendamentos )
+		formatString: #,##0
+		displayFolder: Agendamento
+		lineageTag: 5de8eec0-9a36-42a5-b9de-a3e9f458f63a
+
+	/// Compareceram + faltaram. Base da taxa de faltas.
+	measure 'Agendamentos Realizados' = SUMX ( 'Agendamentos', VALUE ( 'Agendamentos'[realizado] ) )
+		formatString: #,##0
+		displayFolder: Agendamento
+		lineageTag: c81b9fad-8b35-4016-b290-23a3dc8b85f1
+
+	/// Agendamentos com status COMPARECEU.
+	measure Comparecimentos = SUMX ( 'Agendamentos', VALUE ( 'Agendamentos'[compareceu] ) )
+		formatString: #,##0
+		displayFolder: Agendamento
+		lineageTag: 8920351b-381f-487c-b88d-a55350242a61
+
+	/// Agendamentos com status FALTOU.
+	measure Faltas = SUMX ( 'Agendamentos', VALUE ( 'Agendamentos'[faltou] ) )
+		formatString: #,##0
+		displayFolder: Agendamento
+		lineageTag: 7e7990b9-983e-407d-917f-f23d36afdf51
+
+	/// Agendamentos ainda sem desfecho registrado.
+	measure Pendentes = CALCULATE ( [Total de Agendamentos], Agendamentos[Status] = "PENDENTE" )
+		formatString: #,##0
+		displayFolder: Agendamento
+		lineageTag: 999fef15-61be-4d1d-9645-70e1f4cfb466
+
+	/// Faltas ÷ (compareceram + faltaram). Pendentes e agenda futura ficam fora.
+	measure 'Taxa de Faltas' = DIVIDE ( [Faltas], [Agendamentos Realizados] )
+		formatString: 0.0%
+		displayFolder: Agendamento
+		lineageTag: c5eed454-3d53-4d17-9815-fa474c9a8dc0
+
+	/// Comparecimentos ÷ agendamentos realizados.
+	measure 'Taxa de Comparecimento' = DIVIDE ( [Comparecimentos], [Agendamentos Realizados] )
+		formatString: 0.0%
+		displayFolder: Agendamento
+		lineageTag: 877328e1-935c-4bf0-8fab-cb17bebb9387
+
+	/// Taxa de faltas de todas as UBS juntas, no período filtrado.
+	measure 'Taxa de Faltas da Rede' = CALCULATE ( [Taxa de Faltas], REMOVEFILTERS ( UBS ) )
+		formatString: 0.0%
+		displayFolder: Agendamento
+		lineageTag: eb7a6aa5-deb0-43b6-98d2-de97a65f5f03
+
+	/// Quantas vezes a taxa da UBS está acima (>1) ou abaixo (<1) da rede.
+	measure 'Faltas vs Rede' = DIVIDE ( [Taxa de Faltas], [Taxa de Faltas da Rede] )
+		formatString: 0.00"x"
+		displayFolder: Agendamento
+		lineageTag: 3ef57667-d428-4aa1-aebf-5212c5728c6e
+
+	/// Taxa de faltas no mês anterior. Só aparece com um único mês selecionado.
+	measure 'Taxa de Faltas (mês anterior)' =
+			IF (
+				HASONEVALUE ( 'Calendário'[Ano-Mês] ),
+				CALCULATE ( [Taxa de Faltas], DATEADD ( 'Calendário'[Data], -1, MONTH ) )
+			)
+		formatString: 0.0%
+		displayFolder: Agendamento
+		lineageTag: ee6e9c83-4412-4a57-952c-e65163badb05
+
+	/// Variação em pontos percentuais em relação ao mês anterior.
+	measure 'Δ Taxa de Faltas (p.p.)' =
+			IF (
+				NOT ISBLANK ( [Taxa de Faltas] ) && NOT ISBLANK ( [Taxa de Faltas (mês anterior)] ),
+				( [Taxa de Faltas] - [Taxa de Faltas (mês anterior)] ) * 100
+			)
+		formatString: +0.0;-0.0;0.0
+		displayFolder: Agendamento
+		lineageTag: 3d8151e7-78cc-4a34-bf3a-a9134d6bdeca
+
+	/// Pacientes distintos (pseudônimo) com agendamento.
+	measure 'Pacientes Agendados' = DISTINCTCOUNT ( Agendamentos[paciente_pseudo] )
+		formatString: #,##0
+		displayFolder: Agendamento
+		lineageTag: 6c685714-9a26-4520-8328-b661314ca40b
+
+	/// Dos que constam como 'compareceu', quantos têm atendimento no laboratório em até 7 dias.
+	measure 'Comparecidos Atendidos no Lab %' =
+			
+			VAR TotalComp = [Comparecimentos]
+			VAR Atendidos = CALCULATE ( [Comparecimentos], INT ( 'Agendamentos'[Atendido no Lab] ) = 1 )
+			RETURN
+			DIVIDE ( Atendidos, TotalComp, 0 )
+		formatString: 0.0%
+		displayFolder: Cruzamento
+		lineageTag: e9ae9ccc-88b5-45a2-b5e3-9d2c4f87758e
+
+	/// Dos que constam como 'faltou', quantos foram atendidos no laboratório em até 7 dias (status a revisar).
+	measure 'Faltosos Atendidos no Lab %' =
+			
+			VAR TotalFaltas = [Faltas]
+			VAR Atendidos = CALCULATE ( [Faltas], INT ( 'Agendamentos'[Atendido no Lab] ) = 1 )
+			RETURN
+			DIVIDE ( Atendidos, TotalFaltas, 0 )
+		formatString: 0.0%
+		displayFolder: Cruzamento
+		lineageTag: 55cc9478-aaa3-40a2-b88e-23c0e6033854
+
+	/// Atendimentos do laboratório sem agendamento do paciente nos 30 dias anteriores.
+	measure 'Atendimentos sem Agendamento %' =
+			
+			VAR TotalAtend = COUNTROWS ( 'Atendimentos' )
+			VAR SemAgend = CALCULATE ( COUNTROWS ( 'Atendimentos' ), INT ( 'Atendimentos'[Tinha Agendamento] ) = 0 )
+			RETURN
+			DIVIDE ( SemAgend, TotalAtend, 0 )
+		formatString: 0.0%
+		displayFolder: Cruzamento
+		lineageTag: 70621bd2-09ce-41d9-a59e-c6c28f3ca45a
+
+	/// Atendimentos no laboratório.
+	measure Cálculo
+		formatString: #,##0
+		displayFolder: Produção
+		lineageTag: 8da240f4-f485-46e5-b9d2-9450a13eb017
+
+	/// Pacientes distintos (pseudônimo) atendidos.
+	measure 'Pacientes Atendidos' = DISTINCTCOUNT ( Atendimentos[paciente_pseudo] )
+		formatString: #,##0
+		displayFolder: Produção
+		lineageTag: 6956f31e-d66b-477d-a1de-5d1910651376
+
+	/// Exames realizados.
+	measure 'Total de Exames' = SUM ( 'Exames Realizados'[quantidade] )
+		formatString: #,##0
+		displayFolder: Produção
+		lineageTag: a44a0155-5959-41e3-b8ae-ed4622418b4a
+
+	/// Média de exames por atendimento (conta só atendimentos com exames no filtro).
+	measure 'Exames por Atendimento' = DIVIDE ( [Total de Exames], DISTINCTCOUNT ( 'Exames Realizados'[atendimento_id] ) )
+		formatString: #,##0.0
+		displayFolder: Produção
+		lineageTag: d8e98a68-459d-4473-9a4b-94f27003b129
+
+	/// Média de atendimentos nos dias com atendimento.
+	measure 'Atendimentos por Dia' = ```
+			
+			AVERAGEX ( 
+			    VALUES ( 'Calendário'[Data] ), 
+			    CALCULATE ( COUNTROWS ( 'Atendimentos' ) ) 
+			)
+			```
+		formatString: #,##0.0
+		displayFolder: Produção
+		lineageTag: 2e532fb9-f069-4e05-a51f-9a1bc9904c48
+
+	/// Exames no mês anterior. Só aparece com um único mês selecionado.
+	measure 'Exames (mês anterior)' =
+			IF (
+				HASONEVALUE ( 'Calendário'[Ano-Mês] ),
+				CALCULATE ( [Total de Exames], DATEADD ( 'Calendário'[Data], -1, MONTH ) )
+			)
+		formatString: #,##0
+		displayFolder: Produção
+		lineageTag: a74692a1-fcad-44f8-94fd-bdf505fdb9f4
+
+	/// Variação percentual de exames em relação ao mês anterior.
+	measure 'Variação de Exames %' =
+			IF (
+				HASONEVALUE ( 'Calendário'[Ano-Mês] ),
+				DIVIDE ( [Total de Exames] - [Exames (mês anterior)], [Exames (mês anterior)] )
+			)
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: Produção
+		lineageTag: 9847fc20-78bf-489d-b5ef-40c6bde7a28f
+
+	/// Soma do valor de referência dos exames (ilustrativo).
+	measure 'Valor de Referência (R$)' = SUM ( 'Exames Realizados'[valor] )
+		formatString: R$ #,##0.00
+		displayFolder: Produção
+		lineageTag: ca011637-8424-4945-b673-4dd4c8df9e47
+
+	/// Tempo médio de liberação em horas.
+	measure 'TAT Médio (h)' = AVERAGE ( 'Exames Realizados'[tat_horas] )
+		formatString: #,##0.0
+		displayFolder: Prazo
+		lineageTag: b92e21a3-890d-4bdd-963c-bbc6f5485412
+
+	/// Exames liberados dentro do prazo do catálogo ÷ exames liberados.
+	measure '% Liberado no Prazo' =
+			DIVIDE (
+				CALCULATE ( COUNTROWS ( 'Exames Realizados' ), 'Exames Realizados'[Dentro do Prazo] = TRUE () ),
+				CALCULATE ( COUNTROWS ( 'Exames Realizados' ), NOT ISBLANK ( 'Exames Realizados'[Dentro do Prazo] ) )
+			)
+		formatString: 0.0%
+		displayFolder: Prazo
+		lineageTag: 593ca082-b914-4cf8-a84b-5efc0d8a6381
+
+	/// Exames com situação RECOLETA ÷ exames.
+	measure 'Taxa de Recoleta' =
+			DIVIDE (
+				CALCULATE ( COUNTROWS ( 'Exames Realizados' ), 'Exames Realizados'[Situação] = "RECOLETA" ),
+				COUNTROWS ( 'Exames Realizados' )
+			)
+		formatString: 0.0%
+		displayFolder: Prazo
+		lineageTag: d0358db0-b267-462c-8dfc-195a1cbece31
+
+	/// Não conformidades registradas.
+	measure NCs = COUNTROWS ( 'Não Conformidades' )
+		formatString: #,##0
+		displayFolder: Qualidade
+		lineageTag: 770053aa-4c5d-49c7-a2e7-38eb52babcef
+
+	/// Não conformidades abertas ou em tratamento.
+	measure 'NCs Abertas' = CALCULATE ( [NCs], 'Não Conformidades'[Status] IN { "ABERTA", "EM_TRATAMENTO" } )
+		formatString: #,##0
+		displayFolder: Qualidade
+		lineageTag: 590d23fc-601e-492d-9843-d1c3bcee5df8
+
+	/// Abertas com prazo vencido.
+	measure 'NCs Vencidas' = CALCULATE ( [NCs], 'Não Conformidades'[Vencida] = TRUE () )
+		formatString: #,##0
+		displayFolder: Qualidade
+		lineageTag: 273b1dab-ce09-42fa-91fd-a6beb9786a2d
+
+	/// Dias entre o registro e a conclusão.
+	measure 'Tempo Médio de Resolução (dias)' = AVERAGE ( 'Não Conformidades'[dias_resolucao] )
+		formatString: #,##0.0
+		displayFolder: Qualidade
+		lineageTag: d11752a3-bde8-499d-9859-31a63805a99f
+
+	/// Ações 5W2H concluídas ÷ ações cadastradas.
+	measure '% Ações 5W2H Concluídas' = DIVIDE ( SUM ( 'Não Conformidades'[acoes_concluidas] ), SUM ( 'Não Conformidades'[qtd_acoes] ) )
+		formatString: 0.0%
+		displayFolder: Qualidade
+		lineageTag: 88320bb1-781c-47a1-8196-0134dbe4073e
+
+	/// Triagens registradas.
+	measure 'Total de Triagens' = COUNTROWS ( Triagens )
+		formatString: #,##0
+		displayFolder: Triagem
+		lineageTag: 8e7d9024-1269-485b-a202-be44fec340d8
+
+	/// Triagens ainda não confirmadas.
+	measure 'Triagens Aguardando' = CALCULATE ( [Total de Triagens], Triagens[Situação] = "AGUARDANDO" )
+		formatString: #,##0
+		displayFolder: Triagem
+		lineageTag: ae8cb7c4-3ac2-4b27-8e38-beb83716a424
+
+	column Ordem
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 403eccf4-5ce5-4a40-b4e4-9ba04f407c28
+		summarizeBy: none
+		sourceColumn: [Ordem]
+
+	partition Medidas = calculated
+		mode: import
+		source = ROW ( "Ordem", 0 )
+

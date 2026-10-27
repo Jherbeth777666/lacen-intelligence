@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "LACEN_Intelligence"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "8cb52337-c1e5-4dc8-8870-cc3d6d0df638"
+  }
+}

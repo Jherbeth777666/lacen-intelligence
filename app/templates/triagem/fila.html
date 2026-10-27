@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Triagem{% endblock %}
+{% block h1 %}Triagem em tempo real{% endblock %}
+{% block sub %}Fila de pacientes com exames solicitados · atualizado ao carregar a página{% endblock %}
+{% block acoes %}
+  {% if pode('triagem_editar') %}<a class="btn btn-primario" href="{{ url_for('triagem.nova') }}"><svg class="ic"><use href="#i-plus"/></svg>Nova triagem</a>{% endif %}
+{% endblock %}
+{% block conteudo %}
+<section class="kpis">
+  {{ m.kpi('Aguardando', resumo.aguardando|num) }}
+  {{ m.kpi('Aguardando há mais de 24 h', resumo.aguardando_mais_24h|num, destaque=resumo.aguardando_mais_24h > 0) }}
+  {{ m.kpi('Urgentes aguardando', resumo.urgentes_aguardando|num, destaque=resumo.urgentes_aguardando > 0) }}
+  {{ m.kpi('Triagens hoje', resumo.hoje|num) }}
+  {{ m.kpi('Tempo médio até confirmar', resumo.minutos_medios_ate_confirmar|num, ' min', ajuda='Últimos 7 dias') }}
+</section>
+
+<div class="grade g-2-1" style="align-items:start">
+  <section class="card">
+    <div class="card-cab"><div><h2>Triagens por dia</h2><p>Últimos 30 dias · rotina e casos prioritários ou urgentes</p></div></div>
+    <div class="card-corpo"><div class="grafico baixo"><canvas role="img" id="g-triagem-dia" aria-label="Triagens por dia nos últimos 30 dias"></canvas></div></div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Tempo até confirmar</h2><p>Últimos 30 dias, por prioridade</p></div></div>
+    <div class="tabela-wrap"><table class="tabela">
+      <thead><tr><th>Prioridade</th><th class="n">Triagens</th><th class="n">Aguardando</th><th class="n">Minutos</th></tr></thead>
+      <tbody>{% for p in historico.por_prioridade %}<tr><td>{{ rotulo('prioridade_triagem', p.prioridade) }}</td><td class="n">{{ p.total|num }}</td>
+        <td class="n">{{ p.aguardando|num }}</td><td class="n">{{ p.minutos_ate_confirmar|num if p.minutos_ate_confirmar is not none else '—' }}</td></tr>
+      {% else %}<tr><td colspan="4"><div class="vazio">Sem triagens nos últimos 30 dias.</div></td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-cab">
+    <form method="get" class="filtros" data-auto>
+      <div class="campo"><label for="situacao">Situação</label>
+        <select name="situacao" id="situacao">
+          {% for v, r in [('ABERTAS','Em aberto'),('AGUARDANDO','Aguardando'),('CONFIRMADA','Confirmadas'),('COLETADA','Coletadas'),('CANCELADA','Canceladas'),('TODAS','Todas')] %}
+            <option value="{{ v }}" {{ 'selected' if situacao == v }}>{{ r }}</option>{% endfor %}
+        </select></div>
+      <div class="campo"><label for="dias">Período</label>
+        <select name="dias" id="dias">
+          {% for v, r in [(1,'Hoje'),(7,'Últimos 7 dias'),(30,'Últimos 30 dias'),(365,'Último ano')] %}
+            <option value="{{ v }}" {{ 'selected' if dias == v }}>{{ r }}</option>{% endfor %}
+        </select></div>
+      <div class="campo" style="min-width:220px"><label for="busca">Paciente</label>
+        <input type="search" id="busca" name="busca" value="{{ busca }}" placeholder="Buscar pelo nome"></div>
+      <button class="btn" type="submit">Filtrar</button>
+    </form>
+    <span class="mudo pequeno">{{ linhas|length }} triagem(ns)</span>
+  </div>
+  <div class="tabela-wrap">
+    <table class="tabela">
+      <thead><tr><th>#</th><th>Paciente</th><th>UBS</th><th>Exames</th><th>Prioridade</th><th>Situação</th><th>Registrada</th><th class="n">Ação</th></tr></thead>
+      <tbody>
+      {% for t in linhas %}
+        <tr>
+          <td class="mudo">{{ t.id }}</td>
+          <td><a href="{{ url_for('triagem.detalhe', tid=t.id) }}"><b>{{ t.nome }}</b></a>
+              <div class="mudo pequeno">{{ t.idade }} anos{% if t.profissional %} · {{ t.profissional }}{% endif %}</div></td>
+          <td>{{ t.ubs }}</td>
+          <td style="max-width:280px">{% for s in (t.exames or '').split() %}<span class="sigla">{{ s }}</span>{% endfor %}</td>
+          <td>{{ m.badge_prioridade(t.prioridade) }}</td>
+          <td>{{ m.badge_situacao(t.situacao) }}
+              {% if t.situacao == 'AGUARDANDO' and t.horas > 24 %}<div class="pequeno" style="color:var(--danger)">há {{ t.horas|num }} h</div>{% endif %}</td>
+          <td class="mudo pequeno">{{ t.data_triagem|data }}</td>
+          <td class="acoes">
+            {% if pode('triagem_editar') %}
+              {% if t.situacao == 'AGUARDANDO' %}
+                <form class="inline" method="post" action="{{ url_for('triagem.mudar_situacao', tid=t.id, acao='confirmar') }}">{{ m.csrf() }}
+                  <input type="hidden" name="voltar" value="{{ request.full_path }}">
+                  <button class="btn btn-ok btn-p"><svg class="ic" style="width:14px;height:14px"><use href="#i-check"/></svg>Confirmar</button></form>
+              {% elif t.situacao == 'CONFIRMADA' %}
+                <form class="inline" method="post" action="{{ url_for('triagem.mudar_situacao', tid=t.id, acao='coletar') }}">{{ m.csrf() }}
+                  <input type="hidden" name="voltar" value="{{ request.full_path }}">
+                  <button class="btn btn-p">Registrar coleta</button></form>
+              {% else %}<span class="mudo pequeno">—</span>{% endif %}
+            {% else %}<a class="btn btn-p" href="{{ url_for('triagem.detalhe', tid=t.id) }}">Ver</a>{% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8"><div class="vazio">Nenhuma triagem encontrada com esses filtros.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<script type="application/json" id="dados">{{ graficos }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graficos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/triagem_fila.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% set a = k.atual %}{% set v = k.variacao %}
+{% block titulo %}Agendamentos{% endblock %}
+{% block h1 %}Agendamentos e comparecimento{% endblock %}
+{% block sub %}{% if ubs_nome %}{{ ubs_nome }} · {{ periodo.rotulo() }}{% else %}{{ periodo.rotulo() }} · rede inteira{% endif %}{% endblock %}
+{% block acoes %}
+<form method="get" class="filtros" data-auto>
+  {% if mes_atual %}<input type="hidden" name="mes" value="{{ mes_atual }}">{% endif %}
+  <select name="ubs" aria-label="Filtrar UBS" style="width:auto">
+    <option value="">Rede inteira</option>
+    {% for u in ubs_lista %}<option value="{{ u.id }}" {{ 'selected' if ubs_id == u.id }}>{{ u.nome|ubs }}</option>{% endfor %}
+  </select>
+</form>
+{{ m.seletor_periodo(meses, mes_atual, periodo, {'ubs': ubs_id}) }}
+{% endblock %}
+{% block conteudo %}
+{% set t = topo.atual %}{% set tv = topo.variacao %}
+<section class="kpis">
+  {{ m.kpi('Agendados', t.agendamentos|num, var=tv.agendamentos, bom_quando=None) }}
+  {{ m.kpi('Compareceram', t.compareceram|num, var=tv.compareceram) }}
+  {{ m.kpi('Faltaram', t.faltas|num, var=tv.faltas, bom_quando='desce') }}
+  {{ m.kpi('Taxa de comparecimento', t.taxa_comparecimento|num(1), '%', tv.taxa_comparecimento) }}
+  {{ m.kpi('Taxa de faltas', t.taxa_falta|num(1), '%', tv.taxa_falta, bom_quando='desce',
+           destaque=(ubs_id and t.taxa_falta and rede.taxa_falta and t.taxa_falta >= rede.taxa_falta * 1.5)) }}
+  {{ m.kpi('Pendentes de registro', t.pendentes|num, ajuda='Agendamentos passados sem status de comparecimento') }}
+</section>
+{% if ubs_id %}
+<div class="filtro-ativo">
+  <span>Mostrando <b>{{ ubs_nome or 'a UBS selecionada' }}</b>. Na rede, no mesmo período: comparecimento <b>{{ rede.taxa_comparecimento|num(1) }}%</b>,
+    faltas <b>{{ rede.taxa_falta|num(1) }}%</b>. O ranking e a matriz continuam mostrando todas as UBS.</span>
+  <a class="btn btn-p" href="?{{ 'mes=' ~ mes_atual if mes_atual }}">Ver a rede inteira</a>
+</div>
+{% endif %}
+
+<div class="grade g2">
+  <section class="card">
+    <div class="card-cab"><div><h2>Comparecimento e faltas por mês</h2><p>Todo o histórico · % dos agendamentos realizados · linha clara = referência de comparecimento ({{ (100 - meta_falta)|num(0) }}%)</p></div></div>
+    <div class="card-corpo"><div class="grafico"><canvas role="img" id="g-mensal" aria-label="Comparecimento e faltas por mês, em porcentagem"></canvas></div></div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Faltas por dia da semana</h2><p>Sobre agendamentos realizados · em vermelho: o dia com mais faltas</p></div></div>
+    <div class="card-corpo"><div class="grafico"><canvas role="img" id="g-semana" aria-label="Taxa de faltas por dia da semana"></canvas></div></div>
+  </section>
+</div>
+
+<div class="grade g-2-1" style="align-items:start">
+  <section class="card">
+    <div class="card-cab"><div><h2>Matriz de prioridade das UBS</h2>
+      <p>Cada ponto é uma UBS com 30+ agendamentos realizados · mais à direita = mais agendamentos · mais acima = mais faltas ·
+        em vermelho: acima da média nos dois (onde agir primeiro){% if ubs_id %} · contorno branco = UBS selecionada{% endif %}</p></div></div>
+    <div class="card-corpo">{% if n_matriz %}<div class="grafico" style="height:320px"><canvas role="img" id="g-matriz" aria-label="Volume de agendamentos versus taxa de faltas por UBS"></canvas></div>
+      {% else %}<div class="vazio">Nenhuma UBS com 30+ agendamentos realizados no período.</div>{% endif %}</div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Jornada do paciente</h2><p>Do agendamento ao atendimento no laboratório{% if ubs_id %} · UBS selecionada{% endif %}</p></div></div>
+    <div class="card-corpo">
+      {% if jornada %}
+      <ol class="jornada">
+        {% for j in jornada %}
+        <li>
+          <span class="j-nome">{{ j.etapa }}<small>{{ j.ajuda }}</small></span>
+          <span class="j-val">{{ j.quantidade|num }}<small>{{ j.pct_total|num(1) }}% do agendado</small></span>
+          <span class="j-trilho"><i style="width:{{ j.pct_total or 0 }}%"></i></span>
+          {% if loop.previtem %}{% set perda = loop.previtem.quantidade - j.quantidade %}
+          <span class="j-perda">{% if perda > 0 %}− {{ perda|num }} em relação à etapa anterior ({{ (100 - (j.pct_etapa_anterior or 0))|num(1) }}%){% else %}sem perda nesta etapa{% endif %}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+      <p class="pequeno mudo" style="margin:16px 0 0">Na rede: {{ cruzamento.pct_atendimentos_sem_agendamento|num(1) }}% dos atendimentos do laboratório não tinham agendamento;
+        {{ cruzamento.faltou_mas_atendido|num }} pacientes marcados como falta foram atendidos mesmo assim (possível erro de registro).</p>
+      {% else %}<div class="vazio">Sem agendamentos no período.</div>{% endif %}
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-cab"><div><h2>Faltas por UBS e dia da semana</h2>
+    <p>Quanto mais claro, maior a taxa de faltas · UBS com 30+ agendamentos realizados · “n=” marca dias com menos de 10 agendamentos</p></div></div>
+  <div class="card-corpo tabela-wrap">
+    {% if mapa.linhas %}
+    <table class="calor">
+      <thead><tr><th class="l">UBS</th>{% for d in mapa.dias %}<th>{{ d }}</th>{% endfor %}<th>Total</th></tr></thead>
+      <tbody>{% for l in mapa.linhas %}
+        <tr><th class="l" title="{{ l.ubs }}">{{ l.ubs|ubs }}</th>
+          {% for c in l.celulas + [l.total] %}<td title="{{ c.titulo }}" class="{{ 'vazio-c' if not c.bg }}"{% if c.bg %} style="background:{{ c.bg }};color:{{ c.cor }}"{% endif %}>{{ c.txt }}</td>{% endfor %}</tr>
+      {% endfor %}</tbody>
+    </table>
+    <div class="escala"><span>0%</span><i></i><span>{{ mapa.topo|num(0) }}% ou mais</span></div>
+    {% else %}<div class="vazio">Sem agendamentos realizados no período.</div>{% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-cab"><div><h2>Ranking de UBS</h2><p>Ordenado pela taxa de faltas · clique no título de uma coluna para reordenar{% if not periodo.todos %} · variação vs. {{ periodo_anterior.rotulo() }}{% endif %}</p></div></div>
+  <div class="tabela-wrap rolagem-tabela"><table class="tabela" data-ordenavel>
+    <thead><tr><th>UBS</th><th class="n">Agendados</th><th class="n">Participação</th><th class="n">Compareceram</th><th class="n">Faltas</th>
+      <th class="n">Comparecimento</th><th>Taxa de faltas</th><th class="n">Variação</th><th data-sem-ordem title="Taxa de faltas mês a mês, escala de 0 a 60%">Últimos 6 meses</th>
+      <th class="n">Atendimentos lab.</th><th class="n">Exames</th>{% if tem_recoleta %}<th class="n">Recoleta</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in ranking %}
+      <tr>
+        <td style="white-space:nowrap" data-v="{{ r.ubs|ubs }}"><a href="?{{ 'mes=' ~ mes_atual ~ '&' if mes_atual }}ubs={{ r.ubs_id }}">{{ r.ubs|ubs }}</a>
+          {% if (r.realizados or 0) < 30 %}<span class="badge b-neutro" title="Menos de 30 agendamentos realizados">amostra pequena</span>{% endif %}</td>
+        <td class="n">{{ r.agendados|num }}</td>
+        <td class="n">{{ r.participacao_demanda|pct }}</td>
+        <td class="n">{{ r.compareceram|num }}</td>
+        <td class="n">{{ r.faltas|num }}</td>
+        <td class="n">{{ r.taxa_comparecimento|pct }}</td>
+        <td style="min-width:150px">{% if r.taxa_falta is not none %}<span class="barra-inline" style="width:{{ (r.taxa_falta * 1.2)|round|int }}px;background:{{ '#d03b3b' if r.taxa_falta >= (a.taxa_falta or 0) * 1.5 else '#3987e5' }}"></span>{{ r.taxa_falta|pct }}{% else %}—{% endif %}</td>
+        <td class="n {{ 'var-ruim' if (r.variacao_pp or 0) > 0 else 'var-bom' }}">{{ ('+' if (r.variacao_pp or 0) > 0 else '') ~ (r.variacao_pp|num(1)) ~ ' p.p.' if r.variacao_pp is not none else '—' }}</td>
+        <td>{{ spark(tendencia.get(r.ubs_id), '#d95926', 120, 26, 'spark-ubs', (0, 60)) }}</td>
+        <td class="n">{{ r.atendimentos|num }}</td>
+        <td class="n">{{ r.exames|num }}</td>
+        {% if tem_recoleta %}<td class="n">{{ r.taxa_recoleta|pct }}</td>{% endif %}
+      </tr>
+    {% else %}<tr><td colspan="12"><div class="vazio">Sem agendamentos no período.</div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<div class="grade g3">
+  <section class="card">
+    <div class="card-cab"><div><h2>Pacientes que faltam mais de uma vez</h2><p>No período{% if periodo.todos %} (toda a base){% endif %}{% if ubs_id %} · UBS selecionada{% endif %}</p></div></div>
+    <div class="card-corpo">
+      {% if repetidas.faltas %}
+      <div class="kpi" style="padding:0 0 12px;border:0">
+        <div class="kpi-rotulo">Faltas de quem faltou 2+ vezes</div>
+        <div class="kpi-valor">{{ repetidas.pct_faltas_de_repetidos|num(1) }}<small>%</small></div>
+        <div class="pequeno mudo">{{ repetidas.pacientes_repetidos|num }} paciente{{ 's' if repetidas.pacientes_repetidos != 1 }} (de {{ repetidas.pacientes_com_falta|num }} que faltaram) {{ 'respondem' if repetidas.pacientes_repetidos != 1 else 'responde' }} por essa parte das {{ repetidas.faltas|num }} faltas. É um público para lembrete ativo (ligação ou mensagem).</div>
+      </div>
+      <div class="grafico baixo"><canvas role="img" id="g-repetidas" aria-label="Pacientes por número de faltas no período"></canvas></div>
+      {% else %}<div class="vazio">Nenhuma falta no período.</div>{% endif %}
+    </div>
+  </section>
+  <section class="card">
+    {% if horario_unico %}
+    <div class="card-cab"><div><h2>Horário de agendamento</h2><p>Padrão do laboratório</p></div></div>
+    <div class="card-corpo">
+      <div class="horario-unico">
+        <span class="ic-num"><svg class="ic"><use href="#i-clock"/></svg></span>
+        <div><div class="n-val">{{ horario_unico.horario }}</div>
+          <div class="n-det">horário único · {{ horario_unico.pct|num(1) }}% dos {{ horario_unico.total|num }} agendamentos</div></div>
+      </div>
+      <p class="pequeno" style="color:var(--ink-2);margin:14px 0 0">Todos chegam juntos: a fila e o pico de coleta se concentram na abertura.
+        Escalonar a chegada é uma oportunidade de melhoria (veja os alertas).</p>
+      {% if horario_unico.n_outros %}
+      <p class="pequeno mudo" style="margin:10px 0 0">{{ horario_unico.n_outros|num }} registro{{ 's' if horario_unico.n_outros != 1 }} com outro horário
+        ({% for o in horario_unico.outros[:6] %}{{ o.horario }}: {{ o.n }}{{ ', ' if not loop.last }}{% endfor %}{{ '…' if horario_unico.outros|length > 6 }}) —
+        provável erro de digitação na planilha de origem.</p>{% endif %}
+    </div>
+    {% else %}
+    <div class="card-cab"><div><h2>Horário agendado</h2><p>Concentração na chegada</p></div></div>
+    <div class="card-corpo"><div class="grafico baixo"><canvas role="img" id="g-horario" aria-label="Agendamentos por horário marcado"></canvas></div></div>
+    {% endif %}
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Agenda futura</h2><p>Próximos agendamentos já importados</p></div></div>
+    <div class="tabela-wrap"><table class="tabela">
+      <thead><tr><th>UBS</th><th class="n">Agendados</th><th>Até</th></tr></thead>
+      <tbody>{% for f in futuros %}<tr><td>{{ f.ubs|ubs }}</td><td class="n">{{ f.qtd|num }}</td><td class="mudo">{{ f.ultima|data }}</td></tr>
+      {% else %}<tr><td colspan="3"><div class="vazio">Nenhuma agenda futura importada.</div></td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+<script type="application/json" id="dados">{{ graficos }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graficos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/agendamentos.js') }}"></script>
+{% endblock %}

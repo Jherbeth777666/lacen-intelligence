@@ -1,0 +1,27 @@
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: pt-BR
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["Calendário","UBS","Exame","Agendamentos","Atendimentos","Exames Realizados","Não Conformidades","Triagens","PastaDados"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Calendário
+ref table UBS
+ref table Exame
+ref table Agendamentos
+ref table Atendimentos
+ref table 'Exames Realizados'
+ref table 'Não Conformidades'
+ref table Triagens
+ref table Medidas
+
+ref cultureInfo pt-BR
+

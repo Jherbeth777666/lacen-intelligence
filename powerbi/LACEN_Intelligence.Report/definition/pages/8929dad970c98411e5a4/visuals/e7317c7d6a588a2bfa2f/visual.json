@@ -1,0 +1,175 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "e7317c7d6a588a2bfa2f",
+  "position": {
+    "x": 16,
+    "y": 472,
+    "z": 8000,
+    "height": 236,
+    "width": 1248,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Não Conformidades"
+                    }
+                  },
+                  "Property": "Etapa"
+                }
+              },
+              "queryRef": "Não Conformidades.Etapa",
+              "nativeQueryRef": "Etapa"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Não Conformidades"
+                    }
+                  },
+                  "Property": "Categoria"
+                }
+              },
+              "queryRef": "Não Conformidades.Categoria",
+              "nativeQueryRef": "Categoria"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Não Conformidades"
+                    }
+                  },
+                  "Property": "Prioridade"
+                }
+              },
+              "queryRef": "Não Conformidades.Prioridade",
+              "nativeQueryRef": "Prioridade"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Não Conformidades"
+                    }
+                  },
+                  "Property": "Status"
+                }
+              },
+              "queryRef": "Não Conformidades.Status",
+              "nativeQueryRef": "Status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Não Conformidades"
+                    }
+                  },
+                  "Property": "Setor"
+                }
+              },
+              "queryRef": "Não Conformidades.Setor",
+              "nativeQueryRef": "Setor"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Não Conformidades"
+                    }
+                  },
+                  "Property": "Prazo"
+                }
+              },
+              "queryRef": "Não Conformidades.Prazo",
+              "nativeQueryRef": "Prazo"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Não Conformidades"
+                    }
+                  },
+                  "Property": "Vencida"
+                }
+              },
+              "queryRef": "Não Conformidades.Vencida",
+              "nativeQueryRef": "Vencida"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "NCs"
+                }
+              },
+              "queryRef": "Medidas.NCs",
+              "nativeQueryRef": "NCs"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Não Conformidades"
+                  }
+                },
+                "Property": "Prazo"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Não conformidades: situação e prazo'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,33 @@
+# segredos — NUNCA versionar
+.env
+*.pem
+chave*.json
+*service-account*.json
+
+# dados reais e brutos
+data/raw/
+*.pbix
+*.xlsx
+*.csv
+!tests/**/*.csv
+
+# ambiente
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+.vscode/
+.DS_Store
+
+# cache do Power BI, ambientes virtuais extras e backups
+**/.pbi/cache.abf
+**/.pbi/localSettings.json
+.venv*/
+venv*/
+backup_*/
+
+agendamentos-julho/
+data/
+*.xls

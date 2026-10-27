@@ -1,0 +1,61 @@
+/// Catálogo de exames com setor e prazo de liberação.
+table Exame
+	lineageTag: b7fdf451-fe4e-44e9-a1aa-4e05bdb7d451
+
+	column exame_id
+		dataType: int64
+		isHidden
+		isKey
+		lineageTag: 1889608c-9fcb-4c73-835c-fb51e9edea18
+		summarizeBy: none
+		sourceColumn: exame_id
+
+	column Sigla
+		dataType: string
+		lineageTag: 386727ee-dbec-4d07-8d55-5a360058d349
+		summarizeBy: none
+		sourceColumn: Sigla
+
+	column Exame
+		dataType: string
+		lineageTag: 592daa0f-88ad-499c-b0fe-789864f55c7f
+		summarizeBy: none
+		sourceColumn: Exame
+
+	column Setor
+		dataType: string
+		lineageTag: 3e719eec-93fe-49c6-b150-a8a0e3ed771c
+		summarizeBy: none
+		sourceColumn: Setor
+
+	column 'Valor de Referência'
+		dataType: decimal
+		formatString: #,##0.00
+		lineageTag: 67159794-ee4a-4699-8f47-b48029262ad1
+		summarizeBy: none
+		sourceColumn: Valor de Referência
+
+	column 'Prazo (h)'
+		dataType: double
+		formatString: 0
+		lineageTag: 4b0809a4-6457-4374-bd19-8bdae94b76de
+		summarizeBy: none
+		sourceColumn: Prazo (h)
+
+	partition Exame = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(Text.TrimEnd(PastaDados, "\") & "\dim_exame.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+				    Colunas = Table.SelectColumns(Cabecalhos, {"exame_id", "sigla", "exame", "setor", "valor_ref", "prazo_horas"}, MissingField.UseNull),
+				    Vazios = Table.TransformColumns(Colunas, {}, each if _ = "" then null else _),
+				    Tipos = Table.TransformColumnTypes(Vazios, {{"exame_id", Int64.Type}, {"sigla", type text}, {"exame", type text}, {"setor", type text}, {"valor_ref", Currency.Type}, {"prazo_horas", type number}}, "en-US"),
+				    Nomes = Table.RenameColumns(Tipos, {{"sigla", "Sigla"}, {"exame", "Exame"}, {"setor", "Setor"}, {"valor_ref", "Valor de Referência"}, {"prazo_horas", "Prazo (h)"}})
+				in
+				    Nomes
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

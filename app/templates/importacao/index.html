@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Importação{% endblock %}
+{% block h1 %}Importação de dados{% endblock %}
+{% block sub %}Arquivo → validação → padronização → anonimização → banco{% endblock %}
+{% block conteudo %}
+<div class="grade g-1-2" style="align-items:start">
+  <section class="card">
+    <div class="card-cab"><div><h2>Enviar arquivo</h2><p>Excel (.xlsx ou .xls), CSV ou o “xls” exportado por sistemas web · até 20 MB</p></div></div>
+    <form method="post" enctype="multipart/form-data" class="card-corpo" style="display:flex;flex-direction:column;gap:14px">
+      {{ m.csrf() }}
+      <div class="campo"><label for="fonte">Tipo de arquivo</label>
+        <select id="fonte" name="fonte" required>
+          <option value="AUTO" selected>Detectar automaticamente (recomendado)</option>
+          <option value="AGENDAMENTOS">Agendamentos das UBS</option><option value="WORKLAB">Produção do Worklab</option></select></div>
+      <div class="campo"><label for="arquivo">Arquivos</label><input type="file" id="arquivo" name="arquivo" accept=".csv,.xlsx,.xls,.txt" multiple required>
+        <span class="ajuda">Pode selecionar vários de uma vez (Ctrl+clique): ex.: fAgendamentos_Setembro, fAtendimentos_Setembro, fExames_Setembro e dUnidades.</span></div>
+      <label class="pequeno" style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="criar_ubs" value="1" checked>
+        Cadastrar automaticamente UBS ainda não cadastradas</label>
+      <button class="btn btn-primario" type="submit"><svg class="ic"><use href="#i-upload"/></svg>Importar</button>
+    </form>
+    <div class="card-corpo pequeno" style="border-top:1px solid var(--line-2);color:var(--ink-2)">
+      <b>O que o tratamento faz</b>
+      <ul style="margin:6px 0 0;padding-left:18px;display:grid;gap:3px">
+        <li>Reconhece cada arquivo (agenda, atendimentos, exames, unidades) e junta exames + atendimentos do Worklab.</li>
+        <li>Acha sozinho a linha de títulos (relatórios com cabeçalho/título em cima) e a aba certa.</li>
+        <li>Reconhece colunas com nomes diferentes (ex.: “Unidade”, “UBS”, “Posto”, “Data/Hora do agendamento”).</li>
+        <li>Unifica grafias de UBS e siglas de exame; exame novo (3+ linhas) entra no catálogo automaticamente.</li>
+        <li>Agendamentos cancelados/desmarcados ficam fora dos indicadores.</li>
+        <li>Usa a mesma identificação do paciente da outra planilha do período, para o cruzamento agenda × laboratório funcionar.</li>
+        <li>Remove duplicidades no arquivo e em relação ao que já está no banco.</li>
+        <li>Troca nome/CPF/CNS por um código <code>PAC_…</code> irreversível e descarta observações em texto livre.</li>
+        <li>O mesmo arquivo só pode ser reenviado se teve linhas rejeitadas (ex.: depois de cadastrar uma UBS) — nada duplica.</li>
+      </ul>
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Histórico de importações</h2><p>Últimas 50</p></div></div>
+    <div class="tabela-wrap"><table class="tabela">
+      <thead><tr><th>#</th><th>Arquivo</th><th>Fonte</th><th>Período</th><th class="n">Lidas</th><th class="n">Novas</th><th class="n">Dupl.</th><th class="n">Rejeit.</th><th>Situação</th></tr></thead>
+      <tbody>{% for i in historico %}
+        <tr><td class="mudo">{{ i.id }}</td><td><a href="{{ url_for('importacao.detalhe', iid=i.id) }}">{{ i.arquivo }}</a>
+          <div class="mudo pequeno">{{ i.iniciado_em|data }}{% if i.usuario %} · {{ i.usuario }}{% endif %}</div></td>
+          <td>{{ 'Agendamentos' if i.fonte == 'AGENDAMENTOS' else 'Worklab' }}</td>
+          <td class="mudo pequeno">{{ i.periodo_inicio|data }} – {{ i.periodo_fim|data }}</td>
+          <td class="n">{{ i.linhas_lidas|num }}</td><td class="n">{{ i.inseridas|num }}</td><td class="n">{{ i.duplicadas|num }}</td>
+          <td class="n {{ 'var-ruim' if i.rejeitadas }}">{{ i.rejeitadas|num }}</td><td>{{ m.badge_situacao(i.status) }}</td></tr>
+      {% else %}<tr><td colspan="9"><div class="vazio">Nenhum arquivo importado ainda.</div></td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}

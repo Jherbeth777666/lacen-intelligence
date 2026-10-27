@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Triagem #{{ t.id }}{% endblock %}
+{% block h1 %}Triagem #{{ t.id }}{% endblock %}
+{% block sub %}Registrada em {{ t.data_triagem|data }}{% if t.responsavel %} por {{ t.responsavel }}{% endif %}{% endblock %}
+{% block acoes %}
+  {% if pode('triagem_editar') %}
+    {% if t.situacao == 'AGUARDANDO' %}
+      <form class="inline" method="post" action="{{ url_for('triagem.mudar_situacao', tid=t.id, acao='confirmar') }}">{{ m.csrf() }}
+        <input type="hidden" name="voltar" value="{{ request.path }}"><button class="btn btn-ok">Confirmar triagem</button></form>
+    {% elif t.situacao == 'CONFIRMADA' %}
+      <form class="inline" method="post" action="{{ url_for('triagem.mudar_situacao', tid=t.id, acao='coletar') }}">{{ m.csrf() }}
+        <input type="hidden" name="voltar" value="{{ request.path }}"><button class="btn btn-primario">Registrar coleta</button></form>
+    {% endif %}
+    {% if t.situacao in ('AGUARDANDO', 'CONFIRMADA') %}
+      <form class="inline" method="post" data-confirmar="Cancelar esta triagem?" action="{{ url_for('triagem.mudar_situacao', tid=t.id, acao='cancelar') }}">{{ m.csrf() }}
+        <input type="hidden" name="voltar" value="{{ request.path }}"><button class="btn btn-perigo">Cancelar</button></form>
+    {% endif %}
+  {% endif %}
+  <a class="btn" href="{{ url_for('triagem.fila') }}">Voltar</a>
+{% endblock %}
+{% block conteudo %}
+<div class="grade g-2-1">
+  <section class="card">
+    <div class="card-cab"><div><h2>{{ t.nome }}</h2><p>Identificador analítico: <code>{{ t.pseudo_id }}</code></p></div>
+      <div>{{ m.badge_prioridade(t.prioridade) }} {{ m.badge_situacao(t.situacao) }}</div></div>
+    <div class="card-corpo">
+      <dl class="ficha">
+        <div><dt>CPF</dt><dd class="num">{{ t.cpf_mascarado }}</dd></div>
+        <div><dt>Cartão SUS</dt><dd class="num">{{ t.cns_mascarado }}</dd></div>
+        <div><dt>Nascimento</dt><dd>{{ t.data_nascimento|data }} ({{ t.idade }} anos)</dd></div>
+        <div><dt>Sexo</dt><dd>{{ 'Feminino' if t.sexo == 'F' else 'Masculino' }}</dd></div>
+        <div><dt>UBS de origem</dt><dd>{{ t.ubs }}</dd></div>
+        <div><dt>Médico solicitante</dt><dd>{% if t.profissional %}{{ t.profissional }} <span class="mudo">({{ t.conselho }}/{{ t.uf }} {{ t.registro }})</span>{% else %}—{% endif %}</dd></div>
+        {% if t.endereco %}<div style="grid-column:1/-1"><dt>Endereço</dt><dd>{{ t.endereco }}</dd></div>{% endif %}
+        {% if t.observacoes %}<div style="grid-column:1/-1"><dt>Observações</dt><dd>{{ t.observacoes }}</dd></div>{% endif %}
+      </dl>
+    </div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Histórico</h2><p>Trilha de auditoria</p></div></div>
+    <div class="card-corpo">
+      {% for h in historico %}
+        <div style="padding:6px 0;border-bottom:1px solid var(--line-2)">
+          <b>{{ {'INSERT':'Registrada','UPDATE':'Situação: ' ~ rotulo('situacao_triagem', h.situacao),'DELETE':'Excluída'}[h.acao] }}</b>
+          <div class="mudo pequeno">{{ h.quando|data }}{% if h.usuario %} · {{ h.usuario }}{% endif %}</div></div>
+      {% else %}<div class="mudo">Sem eventos registrados.</div>{% endfor %}
+      {% if t.confirmado_em %}<p class="pequeno mudo">Confirmada em {{ t.confirmado_em|data }} por {{ t.confirmador }}.</p>{% endif %}
+    </div>
+  </section>
+</div>
+<section class="card">
+  <div class="card-cab"><div><h2>Exames solicitados</h2><p>{{ exames|length }} exame(s)</p></div></div>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Sigla</th><th>Exame</th><th>Setor</th></tr></thead>
+    <tbody>{% for e in exames %}<tr><td><span class="sigla">{{ e.sigla }}</span></td><td>{{ e.nome }}</td><td>{{ e.setor }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endblock %}

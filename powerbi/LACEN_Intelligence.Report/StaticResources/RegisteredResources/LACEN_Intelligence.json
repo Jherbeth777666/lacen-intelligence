@@ -1,0 +1,62 @@
+{
+  "name": "LACEN_Intelligence.json",
+  "dataColors": [
+    "#0F766E",
+    "#F59E0B",
+    "#2563EB",
+    "#DC2626",
+    "#7C3AED",
+    "#0891B2",
+    "#65A30D",
+    "#DB2777",
+    "#475569",
+    "#EA580C"
+  ],
+  "foreground": "#1F2A30",
+  "background": "#FFFFFF",
+  "tableAccent": "#0F766E",
+  "good": "#15803D",
+  "neutral": "#F59E0B",
+  "bad": "#DC2626",
+  "maximum": "#0F766E",
+  "center": "#FDE68A",
+  "minimum": "#FFFFFF",
+  "textClasses": {
+    "callout": {
+      "fontSize": 22,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#1F2A30"
+    },
+    "title": {
+      "fontSize": 11,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#1F2A30"
+    },
+    "header": {
+      "fontSize": 11,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#1F2A30"
+    },
+    "label": {
+      "fontSize": 10,
+      "fontFace": "Segoe UI",
+      "color": "#5B6770"
+    }
+  },
+  "visualStyles": {
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#F4F6F7"
+              }
+            },
+            "transparency": 0
+          }
+        ]
+      }
+    }
+  }
+}

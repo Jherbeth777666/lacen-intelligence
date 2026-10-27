@@ -1,0 +1,247 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "ad8bfa24344b2d4dccf4",
+  "position": {
+    "x": 32.097264437689972,
+    "y": 83.647416413373861,
+    "z": 5000,
+    "height": 105,
+    "width": 1248,
+    "tabOrder": 5000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Atendimentos por Dia"
+                }
+              },
+              "queryRef": "Medidas.Atendimentos por Dia",
+              "nativeQueryRef": "Atendimentos por Dia"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Exames por Atendimento"
+                }
+              },
+              "queryRef": "Medidas.Exames por Atendimento",
+              "nativeQueryRef": "Exames por Atendimento"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Pendentes"
+                }
+              },
+              "queryRef": "Medidas.Pendentes",
+              "nativeQueryRef": "Pendentes"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Comparecidos Atendidos no Lab %"
+                }
+              },
+              "queryRef": "Medidas.Comparecidos Atendidos no Lab %",
+              "nativeQueryRef": "Comparecidos Atendidos no Lab %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Atendimentos sem Agendamento %"
+                }
+              },
+              "queryRef": "Medidas.Atendimentos sem Agendamento %",
+              "nativeQueryRef": "Atendimentos sem Agendamento %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Faltosos Atendidos no Lab %"
+                }
+              },
+              "queryRef": "Medidas.Faltosos Atendidos no Lab %",
+              "nativeQueryRef": "Faltosos Atendidos no Lab %"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Atendimentos por Dia"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "objects": {
+      "layout": [
+        {
+          "properties": {
+            "style": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Cards'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "c5ee6a836031b0b47d63",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Medidas"
+              }
+            },
+            "Property": "Atendimentos por Dia"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "0c045fa560cdc4008a07",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Medidas"
+              }
+            },
+            "Property": "Exames por Atendimento"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "bddb6249c05f1b4f8998",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Medidas"
+              }
+            },
+            "Property": "Pendentes"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "e3cc7cf8eed39502f527",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Medidas"
+              }
+            },
+            "Property": "Comparecidos Atendidos no Lab %"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "150347b64fcc4619fb7d",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Medidas"
+              }
+            },
+            "Property": "Atendimentos sem Agendamento %"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "c2efdb78fe6f40f115a6",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Medidas"
+              }
+            },
+            "Property": "Faltosos Atendidos no Lab %"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

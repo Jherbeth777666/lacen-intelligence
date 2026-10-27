@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}LACEN Intelligence{% endblock %} · LACEN Intelligence</title>
+  <meta name="theme-color" content="#0b141c">
+  <link rel="preload" href="{{ url_for('static', filename='vendor/fonts/public-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='vendor/fonts/ibm-plex-sans-condensed-latin-600-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f2232'/%3E%3Cpath d='M5 18h5l3-7 4 12 3-8 2 3h5' fill='none' stroke='%235aa7f2' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% include "partials/icones.html" %}
+{% block corpo %}
+<div class="layout">
+  <aside class="lateral" id="lateral">
+    <div class="marca">
+      <div class="marca-logo" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" stroke="#5aa7f2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1.5 11h3.5l2-5 3 9 2.5-6.5 1.5 2.5h4.5"/></svg>
+      </div>
+      <div><b>LACEN</b><span>Intelligence</span></div>
+    </div>
+    <nav class="nav" aria-label="Módulos">
+      {% for grupo, itens in menu_grupos %}
+      <div class="nav-grupo">{{ grupo }}</div>
+      {% for endpoint, rotulo_menu, icone, _ in itens %}{% set mod = endpoint.split('.')[0] %}
+        <a href="{{ url_for(endpoint) }}" style="--cor:{{ cor_modulo[mod] }}" class="{{ 'ativo' if mod == modulo_atual }}"
+           {% if mod == modulo_atual %}aria-current="page"{% endif %}>
+          <svg class="ic"><use href="#i-{{ icone }}"/></svg>{{ rotulo_menu }}
+        </a>
+      {% endfor %}{% endfor %}
+    </nav>
+    <div class="lateral-rodape">
+      <div class="quem">{{ usuario_nome }}</div>
+      <div>{{ rotulo('perfil', usuario_perfil) }}</div>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button type="submit">Sair</button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="principal">
+    {% if base_demo %}<div class="faixa-demo">Base de demonstração: todos os pacientes, UBS e números são fictícios.</div>{% endif %}
+    <header class="topo">
+      <div class="topo-titulo">
+        <button class="btn menu-movel" id="abrir-menu" aria-label="Abrir menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+        {% import "partials/macros.html" as mb with context %}
+        {{ mb.tubo(cor_atual, 'tubo tubo-titulo') }}
+        <div>
+          <h1>{% block h1 %}{% endblock %}</h1>
+          <div class="sub">{% block sub %}{% endblock %}</div>
+        </div>
+      </div>
+      <div class="topo-acoes">{% block acoes %}{% endblock %}</div>
+    </header>
+    <main class="conteudo">
+      {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in msgs %}
+          <div class="flash flash-{{ cat }}" role="status"><span>{{ msg }}</span><button type="button" data-fechar aria-label="Fechar">×</button></div>
+        {% endfor %}
+      {% endwith %}
+      {% block conteudo %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

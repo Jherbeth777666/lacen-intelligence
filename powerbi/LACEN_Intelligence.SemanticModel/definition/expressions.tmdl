@@ -1,0 +1,8 @@
+/// Pasta com os CSV gerados por: python -m scripts.exportar_powerbi
+expression PastaDados = "C:\Users\Jhon\Downloads\lacen_powerbi_atualizacao\data\powerbi\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: ee4488dc-4034-4410-b645-1df84336451d
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Text
+

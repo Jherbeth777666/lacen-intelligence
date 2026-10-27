@@ -1,0 +1,103 @@
+/// Atendimentos do Worklab. UBS informada ou inferida pelo último agendamento (até 30 dias).
+table Atendimentos
+	lineageTag: 4c0c1299-e668-486d-83b0-c91d91058d32
+
+	column atendimento_id
+		dataType: string
+		isHidden
+		lineageTag: 9ac23182-d847-4680-b093-8d853311d778
+		summarizeBy: none
+		sourceColumn: atendimento_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Código Worklab'
+		dataType: string
+		lineageTag: 38399c32-4b17-4db5-8bb5-64a82e077888
+		summarizeBy: none
+		sourceColumn: Código Worklab
+
+	column data
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 9bf71dde-eabc-48e5-a0aa-74405dde90de
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column paciente_pseudo
+		dataType: string
+		isHidden
+		lineageTag: 4cd7c004-56b0-4a66-94c8-6cb896af1a1e
+		summarizeBy: none
+		sourceColumn: paciente_pseudo
+
+	column ubs_id
+		dataType: string
+		isHidden
+		lineageTag: fdc40be1-11ed-457e-92e5-1f4b85641b36
+		summarizeBy: none
+		sourceColumn: ubs_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Origem da UBS'
+		dataType: string
+		lineageTag: f186a5cf-c4cb-4d58-89ef-4583b5b7288b
+		summarizeBy: none
+		sourceColumn: Origem da UBS
+
+	column Convênio
+		dataType: string
+		lineageTag: 0ffbbc2f-9925-4559-a76a-c839390a9347
+		summarizeBy: none
+		sourceColumn: Convênio
+
+	column 'Tinha Agendamento'
+		dataType: string
+		lineageTag: 831693e3-bebd-4f87-8aa0-09e0d38eeef8
+		summarizeBy: none
+		sourceColumn: Tinha Agendamento
+
+		annotation SummarizationSetBy = Automatic
+
+	column qtd_exames
+		dataType: string
+		isHidden
+		lineageTag: 9a325a3a-cafd-43a2-b2d6-f27d33f7f414
+		summarizeBy: none
+		sourceColumn: qtd_exames
+
+		annotation SummarizationSetBy = Automatic
+
+	column valor_total
+		dataType: string
+		isHidden
+		lineageTag: bcebcd1b-6f91-4b6c-aed8-3e9409182929
+		summarizeBy: none
+		sourceColumn: valor_total
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Atendimentos = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(Text.TrimEnd(PastaDados, "\") & "\fato_atendimentos.csv"), [Delimiter = ";", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars = true]),
+				    Colunas = Table.SelectColumns(Cabecalhos, {"atendimento_id", "codigo_worklab", "data", "paciente_pseudo", "ubs_id", "origem_ubs", "convenio", "tinha_agendamento", "qtd_exames", "valor_total"}, MissingField.UseNull),
+				    Vazios = Table.TransformColumns(Colunas, {}, each if _ = "" then null else _),
+				    SemUBS = Table.ReplaceValue(Vazios, null, 0, Replacer.ReplaceValue, {"ubs_id"}),
+				    Nomes = Table.RenameColumns(SemUBS, {{"codigo_worklab", "Código Worklab"}, {"origem_ubs", "Origem da UBS"}, {"convenio", "Convênio"}, {"tinha_agendamento", "Tinha Agendamento"}}),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(Nomes,{{"data", type date}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+

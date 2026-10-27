@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "LACEN_Intelligence"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "815b3c0f-d121-0989-aa75-3f1aeaec1769"
+  }
+}

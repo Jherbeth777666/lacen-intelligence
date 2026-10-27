@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Processos{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/diagram-js.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bpmn-js.css') }}">
+{% endblock %}
+{% block h1 %}Processos e melhoria contínua{% endblock %}
+{% block sub %}Fluxo do paciente e da amostra (BPMN 2.0) ligado aos indicadores de {{ periodo.rotulo() }}{% endblock %}
+{% block acoes %}
+  {{ m.seletor_periodo(meses, mes_atual, periodo) }}
+  <a class="btn" href="{{ url_for('static', filename='bpmn/processo_atual.bpmn') }}" download>Baixar AS-IS</a>
+  <a class="btn" href="{{ url_for('static', filename='bpmn/processo_futuro.bpmn') }}" download>Baixar TO-BE</a>
+{% endblock %}
+{% block conteudo %}
+<section class="card">
+  <div class="abas" data-abas=".painel-bpmn" role="tablist">
+    <button class="aba ativa" data-aba="asis" role="tab">Processo atual (AS-IS)</button>
+    <button class="aba" data-aba="tobe" role="tab">Processo futuro (TO-BE)</button>
+  </div>
+  <div class="card-corpo">
+    <div id="asis" class="painel-bpmn"><div class="bpmn" id="bpmn-asis" data-src="{{ url_for('static', filename='bpmn/processo_atual.bpmn') }}" style="height:620px"></div>
+      <p class="legenda-fonte">Tarefas com ícone de mão são manuais. Arraste para mover, use a roda do mouse para zoom.</p></div>
+    <div id="tobe" class="painel-bpmn" hidden><div class="bpmn" id="bpmn-tobe" data-src="{{ url_for('static', filename='bpmn/processo_futuro.bpmn') }}" style="height:620px"></div>
+      <p class="legenda-fonte">Tarefas com engrenagem são automatizadas pelo LACEN Intelligence.</p></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-cab"><div><h2>Mapa de melhorias</h2><p>Cada problema do AS-IS com a evidência medida pelo sistema, a mudança proposta e o indicador que comprova o resultado</p></div></div>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Etapa</th><th>Tipo</th><th>Problema</th><th>Evidência ({{ periodo.rotulo() }})</th><th>Melhoria de processo</th><th>Automação</th><th>Indicador</th></tr></thead>
+    <tbody>{% for x in melhorias %}
+      <tr><td><b>{{ x.etapa }}</b></td>
+        <td><span class="badge {{ {'Gargalo':'b-danger','Retrabalho':'b-warn','Ponto de espera':'b-warn','Desperdício de capacidade':'b-danger','Atividade manual':'b-info','Risco':'b-neutro'}.get(x.tipo,'b-neutro') }}">{{ x.tipo }}</span></td>
+        <td>{{ x.problema }}</td><td class="num"><b>{{ x.evidencia }}</b></td><td>{{ x.melhoria }}</td><td class="mudo">{{ x.automacao }}</td><td class="mudo">{{ x.indicador }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/bpmn-navigated-viewer.production.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/processos.js') }}"></script>
+{% endblock %}

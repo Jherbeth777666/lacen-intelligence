@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Entrar{% endblock %}
+{% block corpo %}
+<div class="tela-login">
+  <section class="login-arte">
+    <div class="marca" style="padding:0"><div class="marca-logo" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="#5aa7f2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 11h3.5l2-5 3 9 2.5-6.5 1.5 2.5h4.5"/></svg></div><div><b>LACEN</b><span>Intelligence</span></div></div>
+    <svg class="pulso" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70 H150 l14-34 22 66 18-50 12 18 H330 l10-22 16 44 14-30 10 12 H600" fill="none" stroke="#2f7fd1" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>
+    <div class="login-texto">
+      <h1>Gestão do laboratório orientada por dados.</h1>
+      <p>Do agendamento na UBS ao exame liberado: comparecimento, produção, qualidade e um analista de IA
+        que responde só com o que os dados mostram.</p>
+      <ul class="estante" aria-label="Módulos">
+        {% for cor, nome, nivel in [('#9085e9', 'Triagem', 0.35), ('#199e70', 'Agenda', 0.6), ('#c98500', 'Laboratório', 0.8),
+                                     ('#e66767', 'Qualidade', 0.45), ('#d55181', 'Analista IA', 0.7)] %}
+        <li>{{ m.tubo(cor, 'tubo tubo-estante', nivel) }}<span>{{ nome }}</span></li>
+        {% endfor %}
+      </ul>
+      <p class="login-nota">Pacientes pseudonimizados: nome e CPF nunca chegam aos painéis nem à IA.</p>
+    </div>
+    <div class="login-rodape">Laboratório Central de Saúde Pública — plataforma de inteligência gerencial</div>
+  </section>
+  <section class="login-form">
+    <form method="post" autocomplete="on" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div>
+        <h1>Entrar</h1>
+        <p class="mudo" style="margin:4px 0 0">Use seu e-mail institucional.</p>
+      </div>
+      {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in msgs %}<div class="flash flash-{{ cat }}" role="alert"><span>{{ msg }}</span></div>{% endfor %}
+      {% endwith %}
+      <div class="campo"><label for="email">E-mail</label>
+        <input type="email" id="email" name="email" value="{{ email or '' }}" required autofocus></div>
+      <div class="campo"><label for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" required autocomplete="current-password"></div>
+      <button class="btn btn-primario" type="submit" style="justify-content:center;padding:10px">Entrar</button>
+      {% if base_demo %}
+      <div class="base" style="display:block">
+        <b>Acesso de demonstração</b><br>
+        admin@lacen.demo · gestor@lacen.demo · triagem@lacen.demo · qualidade@lacen.demo<br>
+        Senha: <code>Lacen@2026</code>
+      </div>
+      {% endif %}
+    </form>
+  </section>
+</div>
+{% endblock %}

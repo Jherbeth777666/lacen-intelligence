@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}{{ 'Registrar não conformidade' if novo else 'Editar NC #' ~ nc.id }}{% endblock %}
+{% block h1 %}{{ 'Registrar não conformidade' if novo else 'Editar não conformidade #' ~ nc.id }}{% endblock %}
+{% block acoes %}<a class="btn" href="{{ url_for('qualidade.index') if novo else url_for('qualidade.detalhe', nid=nc.id) }}">Cancelar</a>{% endblock %}
+{% block conteudo %}
+<form method="post" class="card" action="{{ url_for('qualidade.nova') if novo else url_for('qualidade.detalhe', nid=nc.id) }}">
+  {{ m.csrf() }}
+  <div class="card-corpo form-grade">
+    <div class="secao-form">Ocorrência</div>
+    <div class="campo"><label for="data">Data *</label><input type="date" id="data" name="data" value="{{ nc.data or '' }}"></div>
+    <div class="campo"><label for="etapa">Etapa do processo *</label><select id="etapa" name="etapa"><option value="">Selecione…</option>
+      {% for v, r in R.ETAPA.items() %}<option value="{{ v }}" {{ 'selected' if nc.etapa == v }}>{{ r }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="categoria">Categoria *</label><select id="categoria" name="categoria"><option value="">Selecione…</option>
+      {% for c in categorias %}<option {{ 'selected' if nc.categoria == c }}>{{ c }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="prioridade">Prioridade</label><select id="prioridade" name="prioridade">
+      {% for v, r in R.PRIORIDADE_NC.items() %}<option value="{{ v }}" {{ 'selected' if nc.prioridade == v }}>{{ r }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="setor_id">Setor</label><select id="setor_id" name="setor_id"><option value="">—</option>
+      {% for s in setores %}<option value="{{ s.id }}" {{ 'selected' if nc.setor_id == s.id }}>{{ s.nome }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="ubs_id">UBS envolvida</label><select id="ubs_id" name="ubs_id"><option value="">—</option>
+      {% for u in ubs %}<option value="{{ u.id }}" {{ 'selected' if nc.ubs_id == u.id }}>{{ u.nome }}</option>{% endfor %}</select></div>
+    <div class="campo inteiro"><label for="problema">Descrição do problema *</label>
+      <textarea id="problema" name="problema" placeholder="O que aconteceu, onde e qual o impacto">{{ nc.problema or '' }}</textarea>
+      <div class="ajuda">Não inclua nome ou documento de pacientes.</div></div>
+    <div class="campo inteiro"><label for="causa">Causa identificada</label>
+      <textarea id="causa" name="causa" placeholder="Resultado da análise de causa (5 porquês, Ishikawa)">{{ nc.causa or '' }}</textarea></div>
+
+    <div class="secao-form">Tratamento</div>
+    <div class="campo"><label for="responsavel_id">Responsável</label><select id="responsavel_id" name="responsavel_id"><option value="">—</option>
+      {% for u in usuarios %}<option value="{{ u.id }}" {{ 'selected' if nc.responsavel_id == u.id }}>{{ u.nome }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="prazo">Prazo</label><input type="date" id="prazo" name="prazo" value="{{ nc.prazo or '' }}"></div>
+    <div class="campo"><label for="status">Situação</label><select id="status" name="status">
+      {% for v, r in R.STATUS_NC.items() %}<option value="{{ v }}" {{ 'selected' if nc.status == v }}>{{ r }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="concluida_em">Concluída em</label><input type="date" id="concluida_em" name="concluida_em" value="{{ nc.concluida_em or '' }}"></div>
+    <div class="campo inteiro"><label for="acao_corretiva">Ação corretiva</label>
+      <textarea id="acao_corretiva" name="acao_corretiva">{{ nc.acao_corretiva or '' }}</textarea>
+      <div class="ajuda">Obrigatória para concluir a NC.</div></div>
+    <div class="campo inteiro"><label for="observacao">Observação</label>
+      <textarea id="observacao" name="observacao">{{ nc.observacao or '' }}</textarea></div>
+  </div>
+  <div class="card-cab" style="border-top:1px solid var(--line-2);border-bottom:0;justify-content:flex-end">
+    <button class="btn btn-primario" type="submit">Salvar</button></div>
+</form>
+{% endblock %}

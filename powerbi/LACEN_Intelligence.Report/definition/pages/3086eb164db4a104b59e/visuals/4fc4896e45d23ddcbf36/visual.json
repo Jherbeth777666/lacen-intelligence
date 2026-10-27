@@ -1,0 +1,147 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "4fc4896e45d23ddcbf36",
+  "position": {
+    "x": 428,
+    "y": 400,
+    "z": 8000,
+    "height": 308,
+    "width": 836,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Exame"
+                    }
+                  },
+                  "Property": "Sigla"
+                }
+              },
+              "queryRef": "Exame.Sigla",
+              "nativeQueryRef": "Sigla"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Exame"
+                    }
+                  },
+                  "Property": "Exame"
+                }
+              },
+              "queryRef": "Exame.Exame",
+              "nativeQueryRef": "Exame"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Exame"
+                    }
+                  },
+                  "Property": "Setor"
+                }
+              },
+              "queryRef": "Exame.Setor",
+              "nativeQueryRef": "Setor"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Total de Exames"
+                }
+              },
+              "queryRef": "Medidas.Total de Exames",
+              "nativeQueryRef": "Total de Exames"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Exames (mês anterior)"
+                }
+              },
+              "queryRef": "Medidas.Exames (mês anterior)",
+              "nativeQueryRef": "Exames (mês anterior)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Variação de Exames %"
+                }
+              },
+              "queryRef": "Medidas.Variação de Exames %",
+              "nativeQueryRef": "Variação de Exames %"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Medidas"
+                  }
+                },
+                "Property": "Total de Exames"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Exames: volume e variação'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

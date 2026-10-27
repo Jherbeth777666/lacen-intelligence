@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Analista IA{% endblock %}
+{% block h1 %}Analista IA{% endblock %}
+{% block sub %}Pergunte sobre qualquer mês ou sobre todo o histórico · dados de {{ cobertura.inicio }} a {{ cobertura.fim }}{% endblock %}
+{% block acoes %}
+  <span class="badge {{ 'b-ok' if modo == 'LLM' else 'b-info' }}" title="{{ ia.nome ~ ' com 22 ferramentas de indicadores' if modo == 'LLM' else 'Análise determinística (sem chave de API)' }}">
+    {{ ia.nome ~ ' · ' ~ ia.modelo if modo == 'LLM' else 'Modo analítico offline' }}</span>
+{% endblock %}
+{% block conteudo %}
+{{ m.csrf() }}
+<template id="tpl-avatar">{{ m.tubo('#d55181', 'tubo tubo-mini', 0.6) }}</template>
+{% set b = cobertura.base.detalhe %}
+<div class="ia">
+  <section class="ia-chat">
+    <div class="ia-msgs" id="msgs" aria-live="polite">
+      <div class="ia-vazio" id="vazio">
+        <div class="ia-hero">
+          {{ m.tubo('#d55181', 'tubo ia-hero-tubo', 0.7) }}
+          <div>
+            <h2 class="ia-titulo">O que você quer saber sobre os dados?</h2>
+            <p class="ia-sub">A IA consulta os indicadores do banco e responde com números, gráficos e recomendações.
+              Cite o mês (“em agosto”, “de julho a setembro”) ou pergunte sobre todo o histórico.</p>
+          </div>
+        </div>
+        <ul class="ia-base" aria-label="Dados disponíveis para a IA">
+          <li><b>{{ cobertura.meses }}</b> {{ 'mês' if cobertura.meses == 1 else 'meses' }} <span>{{ cobertura.inicio }} → {{ cobertura.fim }}</span></li>
+          <li><b>{{ b.agendamentos|num }}</b> agendamentos</li>
+          <li><b>{{ b.atendimentos|num }}</b> atendimentos</li>
+          <li><b>{{ b.exames|num }}</b> exames</li>
+          <li><b>{{ b.ubs|num }}</b> UBS</li>
+        </ul>
+        <div class="ia-temas">
+          {% for tema, cor, perguntas in sugestoes %}
+          <div class="ia-tema" style="--cor: {{ cor }}">
+            <h3><i></i>{{ tema }}</h3>
+            {% for q in perguntas %}<button class="exemplo-q" type="button" data-pergunta="{{ q }}">{{ q }}</button>{% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="ia-compositor">
+      <form class="ia-form" id="form-pergunta">
+        <label class="sr" for="pergunta">Pergunta</label>
+        <textarea id="pergunta" rows="1" maxlength="1000" title="Enter envia · Shift + Enter quebra a linha"
+                  placeholder="Pergunte sobre UBS, faltas, presenças, exames… (Enter envia)" required></textarea>
+        <button class="ia-enviar" type="submit" id="enviar" aria-label="Enviar pergunta"><svg class="ic"><use href="#i-send"/></svg></button>
+      </form>
+      <div class="ia-atalhos">
+        <button class="atalho" type="button" id="gerar-relatorio" data-pergunta="{{ pedido_relatorio }}" title="Relatório executivo de {{ periodo_texto }}">
+          <svg class="ic"><use href="#i-clipboard"/></svg>Relatório de {{ cobertura.fim }}</button>
+        <label class="atalho"><svg class="ic"><use href="#i-pin"/></svg>
+          <select id="ubs-analise" aria-label="Analisar uma UBS" data-periodo="todo o período com dados (com destaque para {{ periodo_texto }})">
+            <option value="">Analisar uma UBS…</option>
+            {% for u in ubs_lista %}<option value="{{ u.nome|ubs }}">{{ u.nome|ubs }}</option>{% endfor %}
+          </select></label>
+        <label class="atalho"><svg class="ic"><use href="#i-calendar"/></svg>
+          <select id="periodo-ia" aria-label="Período das próximas perguntas">
+            <option value="">Período: pela pergunta</option>
+            <option value="todo o período com dados">Todo o histórico</option>
+            {% for mm in meses %}<option value="{{ mm.texto }}">{{ mm.texto|capitalize }}</option>{% endfor %}
+          </select></label>
+        <span class="ia-conversa"><span class="ia-memoria" id="memoria"></span>
+          <button type="button" class="btn-link" id="nova-conversa" hidden>Nova conversa</button></span>
+      </div>
+    </div>
+  </section>
+
+  <aside class="ia-lado">
+    <section class="card ia-painel">
+      <h2>Para investigar <small>{{ cobertura.fim }}</small></h2>
+      <ul class="investigar">
+        {% for a in alertas %}
+        <li class="sev-{{ a.severidade }}">
+          <button type="button" class="perguntar-alerta" title="Perguntar à IA sobre este alerta"
+            data-pergunta="Explique o alerta “{{ a.titulo }}”: quais as evidências nos dados, as possíveis causas e o que a gestão deveria fazer?">
+            <span class="ponto" aria-label="{{ {'alta':'Crítico','media':'Atenção','baixa':'Informativo'}[a.severidade] }}"></span>
+            <span class="inv-titulo">{{ a.titulo }}</span>
+            <svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg></button>
+        </li>
+        {% else %}<li class="vazio">Nenhum alerta no período.</li>{% endfor %}
+      </ul>
+    </section>
+    {% if historico %}
+    <section class="card ia-painel">
+      <h2>Perguntas recentes</h2>
+      <div class="recentes">{% for h in historico %}<button class="exemplo-q" type="button" data-pergunta="{{ h.pergunta }}" title="{{ h.pergunta }}">{{ h.pergunta }}</button>{% endfor %}</div>
+    </section>
+    {% endif %}
+    <details class="card como-funciona">
+      <summary>Como a IA trabalha</summary>
+      <ol>
+        <li>A pergunta é ligada a um <b>catálogo fechado de 22 ferramentas de indicadores</b>: a IA não escreve SQL.</li>
+        <li>Os números vêm da camada <b>analítica pseudonimizada</b>: nenhum nome ou CPF chega à IA.</li>
+        <li>Os <b>gráficos</b> são escolhidos pela IA, mas montados pelo sistema com dados do banco.</li>
+        <li>A conversa lembra as últimas 4 perguntas; os números são sempre consultados de novo.</li>
+        <li>Cada consulta fica registrada para auditoria.</li>
+      </ol>
+    </details>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graficos.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/marked.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/purify.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/analista.js') }}" data-api="{{ url_for('analista.api_perguntar') }}" id="script-analista"></script>
+{% endblock %}

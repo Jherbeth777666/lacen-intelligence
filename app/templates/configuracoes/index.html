@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Configurações{% endblock %}
+{% block h1 %}Configurações{% endblock %}
+{% block sub %}Cadastros de referência, usuários e parâmetros{% endblock %}
+{% block conteudo %}
+<section class="kpis">
+  {{ m.kpi('Analista IA', ia.curto, ia.modelo, ajuda='Defina GEMINI_API_KEY (ou ANTHROPIC_API_KEY) no .env para ativar a IA generativa') }}
+  {{ m.kpi('Pseudonimização', 'Ativa' if pseudo_ok else 'NÃO CONFIGURADA', destaque=not pseudo_ok) }}
+  {{ m.kpi('UBS cadastradas', ubs|length|num) }}
+  {{ m.kpi('Exames no catálogo', exames|length|num) }}
+</section>
+
+<section class="card" id="ubs">
+  <div class="card-cab"><div><h2>UBS e nomes alternativos</h2><p>Os aliases permitem que o ETL reconheça grafias diferentes da mesma unidade</p></div></div>
+  <div class="card-corpo grade g2">
+    <form method="post" action="{{ url_for('configuracoes.novo_alias') }}" class="filtros">{{ m.csrf() }}
+      <div class="campo" style="flex:1"><label for="alias">Nome como aparece no arquivo</label><input type="text" id="alias" name="alias" placeholder="Ex.: US Vila Esperanca"></div>
+      <div class="campo" style="flex:1"><label for="ubs_id">Corresponde a</label><select id="ubs_id" name="ubs_id">
+        {% for u in ubs %}<option value="{{ u.id }}">{{ u.nome }}</option>{% endfor %}</select></div>
+      <button class="btn" type="submit">Adicionar alias</button></form>
+    <form method="post" action="{{ url_for('configuracoes.nova_ubs') }}" class="filtros">{{ m.csrf() }}
+      <div class="campo" style="flex:1"><label for="nome_ubs">Nova UBS</label><input type="text" id="nome_ubs" name="nome"></div>
+      <div class="campo"><label for="tipo">Tipo</label><select id="tipo" name="tipo">
+        {% for t in ['UBS','CENTRO_ESPECIALIDADES','CTA','ESPACO','PRISIONAL','OUTRO'] %}<option>{{ t }}</option>{% endfor %}</select></div>
+      <button class="btn" type="submit">Cadastrar</button></form>
+  </div>
+  <div class="tabela-wrap" style="max-height:360px;overflow-y:auto"><table class="tabela">
+    <thead><tr><th>UBS</th><th>Tipo</th><th>Aliases reconhecidos</th><th class="n">Agendamentos</th></tr></thead>
+    <tbody>{% for u in ubs %}<tr><td>{{ u.nome }}</td><td class="mudo">{{ u.tipo }}</td><td class="mudo pequeno">{{ u.aliases or '—' }}</td><td class="n">{{ u.agendamentos|num }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+<section class="card" id="usuarios">
+  <div class="card-cab"><div><h2>Usuários e perfis</h2><p>Triagem vê dados pessoais; gestor e qualidade trabalham com dados agregados</p></div></div>
+  <form method="post" action="{{ url_for('configuracoes.novo_usuario') }}" class="card-corpo filtros">{{ m.csrf() }}
+    <div class="campo"><label for="u_nome">Nome</label><input type="text" id="u_nome" name="nome"></div>
+    <div class="campo"><label for="u_email">E-mail</label><input type="email" id="u_email" name="email"></div>
+    <div class="campo"><label for="u_perfil">Perfil</label><select id="u_perfil" name="perfil">
+      {% for v, r in R.PERFIL.items() %}<option value="{{ v }}">{{ r }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="u_senha">Senha inicial</label><input type="password" id="u_senha" name="senha" autocomplete="new-password"></div>
+    <button class="btn btn-primario" type="submit">Criar usuário</button></form>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Último acesso</th><th>Situação</th><th></th></tr></thead>
+    <tbody>{% for u in usuarios %}<tr><td>{{ u.nome }}</td><td>{{ u.email }}</td><td>{{ rotulo('perfil', u.perfil) }}</td>
+      <td class="mudo">{{ u.ultimo_login|data }}</td>
+      <td><span class="badge {{ 'b-ok' if u.ativo else 'b-neutro' }}">{{ 'Ativo' if u.ativo else 'Inativo' }}</span></td>
+      <td class="acoes"><form class="inline" method="post" action="{{ url_for('configuracoes.alternar_usuario', uid=u.id) }}">{{ m.csrf() }}
+        <button class="btn btn-p">{{ 'Desativar' if u.ativo else 'Reativar' }}</button></form></td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+<section class="card" id="metas">
+  <div class="card-cab"><div><h2>Metas do painel</h2><p>Referência inicial, definida em app/services/indicadores.py (METAS) · ajuste à pactuação do laboratório</p></div></div>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Indicador</th><th>Como é calculado</th><th>Regra</th><th class="n">Meta</th></tr></thead>
+    <tbody>{% for mt in metas %}<tr><td>{{ mt.nome }}</td><td class="mudo">{{ mt.detalhe }}</td>
+      <td>{{ 'até a meta' if mt.sentido == 'max' else 'no mínimo a meta' }}</td><td class="n">{{ mt.meta|num(0 if not mt.unidade else 1) }}{{ mt.unidade }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+<div class="grade g2">
+  <section class="card">
+    <div class="card-cab"><div><h2>Limiares dos alertas</h2><p>Definidos em app/services/alertas.py</p></div></div>
+    <div class="tabela-wrap"><table class="tabela"><tbody>
+      {% for k, v in limiares.items() %}<tr><td><code>{{ k }}</code></td><td class="n">{{ v }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <section class="card">
+    <div class="card-cab"><div><h2>Catálogo de exames</h2><p>Valor e prazo de referência ilustrativos</p></div></div>
+    <div class="tabela-wrap" style="max-height:420px;overflow-y:auto"><table class="tabela">
+      <thead><tr><th>Sigla</th><th>Exame</th><th>Setor</th><th class="n">Prazo</th></tr></thead>
+      <tbody>{% for e in exames %}<tr><td><span class="sigla">{{ e.sigla }}</span></td><td>{{ e.nome }}</td><td class="mudo">{{ e.setor }}</td><td class="n">{{ (e.prazo_horas ~ ' h') if e.prazo_horas else '—' }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}

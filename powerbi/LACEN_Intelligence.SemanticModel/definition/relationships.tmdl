@@ -1,0 +1,44 @@
+relationship dc0fd8d7-4091-167f-940d-8ab3ad4a9c06
+	fromColumn: Agendamentos.data
+	toColumn: Calendário.Data
+
+relationship dc770f6d-f814-68d2-25e0-184b5930e6b8
+	fromColumn: Atendimentos.data
+	toColumn: Calendário.Data
+
+relationship c5ec0a9d-246e-bb0b-a0f1-9feacac34348
+	fromColumn: 'Exames Realizados'.data
+	toColumn: Calendário.Data
+
+relationship bef0ab92-1570-c2ee-fba4-df6610af6147
+	fromColumn: 'Não Conformidades'.data
+	toColumn: Calendário.Data
+
+relationship 2c709455-a29a-b26a-201b-0dd50d22360b
+	fromColumn: Triagens.data
+	toColumn: Calendário.Data
+
+relationship 87520a42-77b8-97ab-0a03-fb62d435e3d4
+	fromColumn: Agendamentos.ubs_id
+	toColumn: UBS.ubs_id
+
+relationship dc7ac432-441e-eccd-bacc-e556cf93f97b
+	fromColumn: Atendimentos.ubs_id
+	toColumn: UBS.ubs_id
+
+relationship 28a4b3de-2187-cbe8-5842-bff96c427804
+	fromColumn: 'Exames Realizados'.ubs_id
+	toColumn: UBS.ubs_id
+
+relationship 827bf49b-0fbc-8746-e0e7-36d6568107b2
+	fromColumn: 'Não Conformidades'.ubs_id
+	toColumn: UBS.ubs_id
+
+relationship bec60c21-42c3-909b-b860-d5791c1f1eb7
+	fromColumn: Triagens.ubs_id
+	toColumn: UBS.ubs_id
+
+relationship 02c299af-c374-294b-5bd2-b862e71e184b
+	fromColumn: 'Exames Realizados'.exame_id
+	toColumn: Exame.exame_id
+

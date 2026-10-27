@@ -1,0 +1,25 @@
+# Render Blueprint: New → Blueprint → escolha este repositório.
+services:
+  - type: web
+    name: lacen-intelligence
+    runtime: docker
+    region: virginia          # mesma região do Supabase (us-east-1)
+    plan: free
+    healthCheckPath: /saude
+    envVars:
+      - key: PRODUCAO
+        value: "1"
+      - key: BASE_DEMO
+        value: "0"
+      - key: WEB_CONCURRENCY
+        value: "1"            # plano grátis: 1 processo (com 4 threads)
+      - key: FLASK_SECRET_KEY
+        generateValue: true   # o Render cria uma chave forte e guarda
+      - key: DATABASE_URL
+        sync: false           # cole a mesma do seu .env
+      - key: PSEUDO_SECRET
+        sync: false           # cole a MESMA do seu .env (senão os pseudônimos mudam)
+      - key: GEMINI_API_KEY
+        sync: false           # opcional: chave do Google AI Studio; em branco = Analista offline
+      - key: ANTHROPIC_API_KEY
+        sync: false           # opcional: alternativa ao Gemini

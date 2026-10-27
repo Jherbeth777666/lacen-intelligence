@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m with context %}
+{% block titulo %}Nova triagem{% endblock %}
+{% block h1 %}Nova triagem{% endblock %}
+{% block sub %}Cadastro do paciente e dos exames solicitados{% endblock %}
+{% block acoes %}<a class="btn" href="{{ url_for('triagem.fila') }}">Voltar à fila</a>{% endblock %}
+{% block conteudo %}
+<form method="post" class="card" id="form-triagem" novalidate>
+  {{ m.csrf() }}
+  <input type="hidden" name="paciente_id" id="paciente_id" value="{{ f.paciente_id or '' }}">
+  <div class="card-corpo form-grade">
+    <div class="secao-form">1. Paciente</div>
+    <div class="campo"><label for="doc">Buscar paciente por CPF ou Cartão SUS</label>
+      <div style="display:flex;gap:8px"><input type="text" id="doc" inputmode="numeric" autocomplete="off" placeholder="Somente números">
+        <button class="btn" type="button" id="btn-buscar">Buscar</button></div>
+      <div class="ajuda">Se o paciente já tem cadastro, os dados pessoais não precisam ser digitados de novo.</div></div>
+    <div class="campo"><div id="paciente-achado" class="paciente-achado" hidden></div></div>
+
+    <div id="dados-paciente" class="form-grade inteiro" style="padding:0">
+      <div class="campo inteiro"><label for="nome">Nome completo *</label>
+        <input type="text" id="nome" name="nome" value="{{ f.nome or '' }}" autocomplete="off"></div>
+      <div class="campo"><label for="cpf">CPF</label>
+        <input type="text" id="cpf" name="cpf" value="{{ f.cpf or '' }}" inputmode="numeric" placeholder="000.000.000-00" autocomplete="off"></div>
+      <div class="campo"><label for="cns">Cartão SUS (CNS)</label>
+        <input type="text" id="cns" name="cns" value="{{ f.cns or '' }}" inputmode="numeric" autocomplete="off">
+        <div class="ajuda">Informe CPF ou CNS.</div></div>
+      <div class="campo"><label for="data_nascimento">Data de nascimento *</label>
+        <input type="date" id="data_nascimento" name="data_nascimento" value="{{ f.data_nascimento or '' }}"></div>
+      <div class="campo"><label for="sexo">Sexo *</label>
+        <select id="sexo" name="sexo"><option value="">Selecione…</option>
+          <option value="F" {{ 'selected' if f.sexo == 'F' }}>Feminino</option><option value="M" {{ 'selected' if f.sexo == 'M' }}>Masculino</option></select></div>
+      <div class="campo inteiro"><label for="endereco">Endereço</label>
+        <input type="text" id="endereco" name="endereco" value="{{ f.endereco or '' }}"></div>
+    </div>
+
+    <div class="secao-form">2. Solicitação</div>
+    <div class="campo"><label for="ubs_id">UBS de origem *</label>
+      <select id="ubs_id" name="ubs_id"><option value="">Selecione…</option>
+        {% for u in ubs %}<option value="{{ u.id }}" {{ 'selected' if f.ubs_id|string == u.id|string }}>{{ u.nome }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="profissional_id">Médico solicitante</label>
+      <select id="profissional_id" name="profissional_id"><option value="">Não informado</option>
+        {% for p in profissionais %}<option value="{{ p.id }}" {{ 'selected' if f.profissional_id|string == p.id|string }}>{{ p.nome }} ({{ p.conselho }}/{{ p.uf }} {{ p.registro }})</option>{% endfor %}</select></div>
+    <div class="campo"><label for="prioridade">Prioridade *</label>
+      <select id="prioridade" name="prioridade">
+        {% for v, r in R.PRIORIDADE_TRIAGEM.items() %}<option value="{{ v }}" {{ 'selected' if f.prioridade == v }}>{{ r }}</option>{% endfor %}</select></div>
+    <div class="campo"><label for="filtro-exame">Filtrar exames</label>
+      <input type="search" id="filtro-exame" placeholder="Digite nome ou sigla"></div>
+    <div class="campo inteiro"><label>Exames solicitados * <span class="mudo" id="qtd-exames"></span></label>
+      <div class="exames-grade" id="exames">
+        {% set ns = namespace(setor=None) %}
+        {% for e in exames %}
+          {% if e.setor != ns.setor %}<h4>{{ e.setor }}</h4>{% set ns.setor = e.setor %}{% endif %}
+          <label data-busca="{{ (e.sigla ~ ' ' ~ e.nome)|lower }}"><input type="checkbox" name="exames" value="{{ e.id }}" {{ 'checked' if f.exames and e.id in f.exames }}>
+            <span>{{ e.nome }} <span class="mudo pequeno">{{ e.sigla }}</span></span></label>
+        {% endfor %}
+      </div></div>
+    <div class="campo inteiro"><label for="observacoes">Observações da triagem</label>
+      <textarea id="observacoes" name="observacoes" maxlength="500" placeholder="Ex.: jejum confirmado, coleta domiciliar…">{{ f.observacoes or '' }}</textarea>
+      <div class="ajuda">Não registre diagnósticos nem informações clínicas desnecessárias.</div></div>
+  </div>
+  <div class="card-cab" style="border-top:1px solid var(--line-2);border-bottom:0;justify-content:flex-end">
+    <a class="btn" href="{{ url_for('triagem.fila') }}">Cancelar</a>
+    <button class="btn btn-primario" type="submit">Registrar triagem</button>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/triagem.js') }}"></script>{% endblock %}

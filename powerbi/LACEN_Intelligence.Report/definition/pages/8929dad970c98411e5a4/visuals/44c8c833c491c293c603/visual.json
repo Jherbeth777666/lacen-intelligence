@@ -1,0 +1,127 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "44c8c833c491c293c603",
+  "position": {
+    "x": 16,
+    "y": 96,
+    "z": 5000,
+    "height": 105,
+    "width": 1248,
+    "tabOrder": 5000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "NCs"
+                }
+              },
+              "queryRef": "Medidas.NCs",
+              "nativeQueryRef": "NCs"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "NCs Abertas"
+                }
+              },
+              "queryRef": "Medidas.NCs Abertas",
+              "nativeQueryRef": "NCs Abertas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "NCs Vencidas"
+                }
+              },
+              "queryRef": "Medidas.NCs Vencidas",
+              "nativeQueryRef": "NCs Vencidas"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Tempo Médio de Resolução (dias)"
+                }
+              },
+              "queryRef": "Medidas.Tempo Médio de Resolução (dias)",
+              "nativeQueryRef": "Tempo Médio de Resolução (dias)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "% Ações 5W2H Concluídas"
+                }
+              },
+              "queryRef": "Medidas.% Ações 5W2H Concluídas",
+              "nativeQueryRef": "% Ações 5W2H Concluídas"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "layout": [
+        {
+          "properties": {
+            "style": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Cards'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
